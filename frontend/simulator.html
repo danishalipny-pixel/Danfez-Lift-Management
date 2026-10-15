@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Floor Simulator — Danfez Lift Control</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/svg+xml" href="/assets/icons/danfez-logo.svg">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/assets/css/danfez-theme.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <!-- Desktop Sidebar -->
+    <aside class="danfez-sidebar">
+      <div class="sidebar-brand">
+        <a href="/dashboard.html" class="d-flex align-items-center text-decoration-none">
+          <div class="d-inline-flex p-2 rounded-3 bg-navy-secondary border border-secondary border-opacity-25 me-2">
+            <i class="bi bi-building-up fs-5 text-danfez-cyan"></i>
+          </div>
+          <div>
+            <div class="fw-bold text-white small" style="letter-spacing: 1px;">DANFEZ TECH</div>
+            <div class="text-danfez-blue" style="font-size: 0.72rem; font-weight: 600;">LIFT CONTROL</div>
+          </div>
+        </a>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-category">Main Operations</div>
+        <a href="/dashboard.html" class="nav-link"><i class="bi bi-speedometer2"></i> Dashboard</a>
+        <a href="/lifts.html" class="nav-link"><i class="bi bi-building"></i> Lift Monitoring</a>
+        <a href="/simulator.html" class="nav-link active"><i class="bi bi-play-circle"></i> Floor Simulator</a>
+
+        <div class="nav-category">Fleet & Service</div>
+        <a href="/maintenance.html" class="nav-link"><i class="bi bi-tools"></i> Maintenance</a>
+        <a href="/alerts.html" class="nav-link"><i class="bi bi-shield-exclamation"></i> Fault & Alert Center</a>
+        <a href="/technicians.html" class="nav-link"><i class="bi bi-person-badge"></i> Technicians</a>
+        <a href="/reports.html" class="nav-link"><i class="bi bi-graph-up-arrow"></i> Reports & Analytics</a>
+
+        <div class="nav-category admin-only">Administration</div>
+        <a href="/users.html" class="nav-link admin-only"><i class="bi bi-people"></i> User Management</a>
+        <a href="/settings.html" class="nav-link admin-only"><i class="bi bi-gear"></i> Settings & Audit</a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center overflow-hidden">
+            <div class="rounded-circle bg-primary bg-opacity-25 text-danfez-cyan p-2 me-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+              <i class="bi bi-person-fill"></i>
+            </div>
+            <div class="overflow-hidden">
+              <div id="user-display-name" class="text-white text-truncate small fw-semibold">Admin User</div>
+              <span id="user-display-role" class="badge bg-primary bg-opacity-25 text-danfez-cyan px-2 py-0" style="font-size: 0.65rem;">ADMIN</span>
+            </div>
+          </div>
+          <button class="btn btn-link text-white-50 p-1" onclick="window.DanfezAuth.logout()" title="Logout">
+            <i class="bi bi-box-arrow-right fs-5"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="danfez-main">
+      <header class="danfez-topbar">
+        <div class="d-flex align-items-center">
+          <button id="sidebar-toggle-btn" class="btn btn-light d-lg-none me-2" aria-label="Toggle navigation">
+            <i class="bi bi-list fs-5"></i>
+          </button>
+          <div>
+            <h5 class="fw-bold text-navy mb-0">Interactive Virtual Simulator</h5>
+            <small class="text-secondary d-none d-sm-inline">Safe software simulation & dispatch testing</small>
+          </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+          <!-- Active Elevator Selector -->
+          <select id="elevator-selector" class="form-select form-select-sm rounded-pill fw-semibold border-primary text-primary" style="width: auto;">
+            <!-- Populated via API -->
+          </select>
+
+          <!-- Audio Chime Toggle -->
+          <button id="audio-toggle-btn" class="btn btn-light rounded-circle" title="Toggle audio chimes" style="width: 38px; height: 38px;">
+            <i class="bi bi-volume-up" id="audio-icon"></i>
+          </button>
+
+          <div class="live-badge online">
+            <span class="pulse-dot"></span> LIVE FEED
+          </div>
+
+          <a href="/profile.html" class="btn btn-light rounded-circle" style="width: 38px; height: 38px;">
+            <i class="bi bi-person"></i>
+          </a>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <!-- Safety Alert Banner -->
+        <div class="alert alert-warning border-0 rounded-4 py-2 px-3 mb-4 shadow-sm">
+          <div class="d-flex align-items-center">
+            <i class="bi bi-exclamation-triangle-fill text-warning fs-4 me-3"></i>
+            <div class="small">
+              <strong>SOFTWARE-ONLY SIMULATION:</strong> This is a software simulation model developed by <strong>DANFEZ TECH HOUSE</strong> for testing dispatch logic and operator training. It does not send signals to real elevator motors, brakes, or safety interlocks.
+            </div>
+          </div>
+        </div>
+
+        <!-- Simulator Interface Main Grid -->
+        <div class="row g-4">
+          <!-- Left: Physical Shaft Visualization -->
+          <div class="col-lg-6 col-xl-5">
+            <div class="simulator-container h-100">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                  <h6 class="fw-bold text-white mb-0" id="sim-shaft-title">Elevator Shaft & Cabin</h6>
+                  <small class="text-white-50" id="sim-shaft-sub">Danfez HQ Tower &bull; Floors 1 &ndash; 10</small>
+                </div>
+                <span class="badge-status badge-operational" id="sim-status-badge">Operational</span>
+              </div>
+
+              <!-- Shaft Viewport -->
+              <div class="shaft-outer" id="shaft-viewport">
+                <!-- Floor Axis Levels 10 down to 1 -->
+                <div class="shaft-floors-axis" id="floors-axis">
+                  <!-- Generated via JavaScript for 10 floors -->
+                </div>
+
+                <!-- Shaft Track with Moving Car -->
+                <div class="shaft-track" id="shaft-track">
+                  <!-- The Elevator Car -->
+                  <div class="elevator-car" id="elevator-car">
+                    <!-- Dual Sliding Doors -->
+                    <div class="door-container" id="door-container">
+                      <div class="car-interior-glow">
+                        <i class="bi bi-people-fill me-1"></i> <span id="car-interior-floor">1</span>
+                      </div>
+                      <div class="door-panel door-left"></div>
+                      <div class="door-panel door-right"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Door status indicator footer -->
+              <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top border-secondary border-opacity-25 small text-white-50">
+                <span>Doors: <strong class="text-white text-capitalize" id="sim-door-text">Closed</strong></span>
+                <span>Speed: <strong class="text-danfez-cyan" id="sim-speed-text">1.0x</strong></span>
+                <span id="sim-moving-indicator" class="badge bg-secondary">Idle</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Car Dispatch Keypad & Operating Controls -->
+          <div class="col-lg-6 col-xl-7">
+            <div class="row g-3">
+              <!-- Digital Display & Queue Banner -->
+              <div class="col-12">
+                <div class="card p-3 bg-navy text-white border-0 shadow-lg">
+                  <div class="row align-items-center g-3">
+                    <!-- Floor Big Digital Readout -->
+                    <div class="col-md-5">
+                      <div class="digital-display">
+                        <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
+                          <i class="bi bi-caret-up-fill digital-arrow inactive" id="arrow-up"></i>
+                          <i class="bi bi-caret-down-fill digital-arrow inactive" id="arrow-down"></i>
+                        </div>
+                        <div class="digital-floor" id="digital-floor-readout">01</div>
+                        <div class="text-white-50 small mt-1" id="digital-status-text">IDLE &bull; DOORS CLOSED</div>
+                      </div>
+                    </div>
+
+                    <!-- Request Queue Pills & Status -->
+                    <div class="col-md-7">
+                      <div class="h-100 d-flex flex-column justify-content-between p-2">
+                        <div>
+                          <small class="text-white-50 d-block fw-semibold mb-2">ACTIVE REQUEST QUEUE</small>
+                          <div id="request-queue-container" class="d-flex flex-wrap gap-1 mb-2">
+                            <span class="badge bg-secondary bg-opacity-50 text-white">Queue Empty</span>
+                          </div>
+                        </div>
+                        <div class="small text-white-50 pt-2 border-top border-secondary border-opacity-25">
+                          LOOK/SCAN dispatch algorithm active. Next target: <strong class="text-danfez-cyan" id="next-target-text">None</strong>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Floor Keypad & Door Controls -->
+              <div class="col-md-7">
+                <div class="card p-4 h-100">
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold text-navy mb-0">Cabin Floor Call Panel</h6>
+                    <small class="text-secondary">Tap floor to call</small>
+                  </div>
+
+                  <!-- 10 Floor Call Buttons Grid -->
+                  <div class="keypad-grid mb-3" id="keypad-grid">
+                    <!-- 10 buttons populated via script: 10 down to 1 -->
+                  </div>
+
+                  <!-- Door Controls -->
+                  <div class="row g-2 mb-3">
+                    <div class="col-6">
+                      <button class="btn btn-navy w-100 py-2 rounded-3 small fw-semibold" id="btn-door-open" onclick="handleDoorAction('open')">
+                        <i class="bi bi-arrows-expand me-1 text-danfez-cyan"></i> Open Doors
+                      </button>
+                    </div>
+                    <div class="col-6">
+                      <button class="btn btn-navy w-100 py-2 rounded-3 small fw-semibold" id="btn-door-close" onclick="handleDoorAction('close')">
+                        <i class="bi bi-arrows-collapse me-1 text-warning"></i> Close Doors
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Emergency Stop & Reset Controls -->
+                  <div class="d-grid gap-2">
+                    <button class="btn btn-emergency py-2 rounded-3" id="btn-emergency-stop" onclick="triggerEmergencyStop()">
+                      <i class="bi bi-octagon-fill me-2"></i> EMERGENCY STOP
+                    </button>
+                    <div class="row g-2">
+                      <div class="col-6">
+                        <button class="btn btn-outline-secondary btn-sm w-100 rounded-pill" onclick="resetSimulator()">
+                          <i class="bi bi-arrow-counterclockwise me-1"></i> Reset Floor 1
+                        </button>
+                      </div>
+                      <div class="col-6">
+                        <button class="btn btn-outline-danger btn-sm w-100 rounded-pill" data-bs-toggle="modal" data-bs-target="#testFaultModal">
+                          <i class="bi bi-bug me-1"></i> Inject Fault
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Simulation Settings & Console Stream -->
+              <div class="col-md-5">
+                <div class="card p-3 h-100 d-flex flex-column">
+                  <div class="mb-3">
+                    <label class="form-label small fw-semibold text-navy mb-1">Simulation Speed</label>
+                    <div class="btn-group w-100" role="group">
+                      <button type="button" class="btn btn-outline-primary btn-sm speed-btn" data-speed="0.5" onclick="setSpeed(0.5)">0.5x</button>
+                      <button type="button" class="btn btn-outline-primary btn-sm speed-btn active" data-speed="1.0" onclick="setSpeed(1.0)">1.0x</button>
+                      <button type="button" class="btn btn-outline-primary btn-sm speed-btn" data-speed="2.0" onclick="setSpeed(2.0)">2.0x</button>
+                      <button type="button" class="btn btn-outline-primary btn-sm speed-btn" data-speed="5.0" onclick="setSpeed(5.0)">5.0x</button>
+                    </div>
+                  </div>
+
+                  <!-- Event Console -->
+                  <div class="flex-grow-1 d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                      <small class="fw-semibold text-navy">Live Event Stream</small>
+                      <small class="text-muted" style="font-size: 0.7rem;">auto-scroll</small>
+                    </div>
+                    <div class="sim-terminal flex-grow-1" id="sim-terminal">
+                      <div class="sim-terminal-line">[00:00:00] Waiting for live events...</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Inject Test Fault Modal -->
+  <div class="modal fade" id="testFaultModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content rounded-4 border-0 shadow-lg">
+        <div class="modal-header border-bottom-0 pb-0">
+          <h5 class="modal-title fw-bold text-navy">Inject Simulated Test Fault</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="test-fault-form">
+          <div class="modal-body">
+            <p class="text-secondary small">
+              Inject a simulated abnormal telemetry event into the virtual elevator to verify automatic alert triggers and technician response flows.
+            </p>
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Fault Category</label>
+              <select id="fault-category" class="form-select" required>
+                <option value="Door Sensor">Door Optical Sensor Obstruction</option>
+                <option value="Motor Drive">Hoist Motor Drive Overheating</option>
+                <option value="Safety Circuit">Safety Loop Interruption</option>
+                <option value="Brake Assembly">Mechanical Brake Wear Sensor</option>
+                <option value="Controller Logic">Elevator Controller Microprocessor Desync</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Severity</label>
+              <select id="fault-severity" class="form-select" required>
+                <option value="Low">Low</option>
+                <option value="Medium" selected>Medium</option>
+                <option value="High">High</option>
+                <option value="Critical">Critical</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Description</label>
+              <textarea id="fault-description" class="form-control" rows="2" placeholder="e.g. Optical curtain signal interrupted for > 30s..." required>Simulated door safety edge obstruction test.</textarea>
+            </div>
+          </div>
+          <div class="modal-footer border-top-0 pt-0">
+            <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-danger rounded-pill px-4">Inject Test Fault</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Bottom Navigation -->
+  <nav class="mobile-bottom-nav">
+    <a href="/dashboard.html" class="mobile-nav-item" data-page="dashboard"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a>
+    <a href="/lifts.html" class="mobile-nav-item" data-page="lifts"><i class="bi bi-building"></i><span>Lifts</span></a>
+    <a href="/simulator.html" class="mobile-nav-item active" data-page="simulator"><i class="bi bi-play-circle"></i><span>Simulator</span></a>
+    <a href="/alerts.html" class="mobile-nav-item" data-page="alerts"><i class="bi bi-shield-exclamation"></i><span>Alerts</span></a>
+    <a href="#" class="mobile-nav-item" onclick="document.querySelector('.danfez-sidebar').classList.toggle('show'); return false;"><i class="bi bi-grid"></i><span>More</span></a>
+  </nav>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/auth.js"></script>
+  <script src="/assets/js/app.js"></script>
+  <script src="/assets/js/pwa.js"></script>
+
+  <script>
+    let activeElevatorId = 1;
+    let elevatorState = null;
+    let floorCount = 10;
+    let prevFloor = 1;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!window.DanfezAuth.requireAuth()) return;
+      window.renderAppShell('simulator');
+
+      // Setup audio toggle
+      const audioBtn = document.getElementById('audio-toggle-btn');
+      const audioIcon = document.getElementById('audio-icon');
+      if (audioBtn) {
+        audioIcon.className = window.danfezAudio.soundEnabled ? 'bi bi-volume-up' : 'bi bi-volume-mute';
+        audioBtn.addEventListener('click', () => {
+          const newState = !window.danfezAudio.soundEnabled;
+          window.danfezAudio.toggleSound(newState);
+          audioIcon.className = newState ? 'bi bi-volume-up' : 'bi bi-volume-mute';
+          window.showToast('Audio Settings', newState ? 'Chimes enabled.' : 'Chimes muted.', 'info');
+        });
+      }
+
+      // Check query param for elevator id
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('id')) {
+        activeElevatorId = parseInt(urlParams.get('id'));
+      }
+
+      await loadElevatorSelector();
+      await fetchSimulatorStatus();
+
+      // Connect live WebSocket feed
+      window.danfezApi.connectSimulatorWebSocket((msg) => {
+        if (msg.type === 'SIMULATOR_UPDATE' || msg.type === 'INIT_STATE') {
+          if (msg.elevators && msg.elevators[activeElevatorId]) {
+            renderSimulatorState(msg.elevators[activeElevatorId]);
+          }
+        }
+      });
+
+      // Polling fallback every 3s
+      setInterval(fetchSimulatorStatus, 3000);
+    });
+
+    async function loadElevatorSelector() {
+      try {
+        const elevators = await window.danfezApi.getElevators();
+        const sel = document.getElementById('elevator-selector');
+        sel.innerHTML = elevators.map(e => `
+          <option value="${e.id}" ${e.id === activeElevatorId ? 'selected' : ''}>
+            ${e.code} (${e.name})
+          </option>
+        `).join('');
+
+        sel.addEventListener('change', () => {
+          activeElevatorId = parseInt(sel.value);
+          fetchSimulatorStatus();
+        });
+      } catch (e) {}
+    }
+
+    async function fetchSimulatorStatus() {
+      try {
+        const state = await window.danfezApi.getSimulatorStatus(activeElevatorId);
+        renderSimulatorState(state);
+      } catch (err) {
+        console.warn('Failed to fetch simulator state:', err);
+      }
+    }
+
+    function renderSimulatorState(state) {
+      if (!state) return;
+      elevatorState = state;
+      floorCount = state.floor_count || 10;
+
+      // Update titles
+      document.getElementById('sim-shaft-title').textContent = `${state.elevator_code || 'LIFT'} — ${state.elevator_name || 'Main Lift'}`;
+      document.getElementById('sim-shaft-sub').textContent = `${state.building_name || 'Building'} &bull; Floors 1 – ${floorCount}`;
+      
+      // Update status badge
+      const badge = document.getElementById('sim-status-badge');
+      badge.textContent = state.status;
+      badge.className = `badge-status badge-${state.status}`;
+
+      // Update moving indicator
+      const movInd = document.getElementById('sim-moving-indicator');
+      movInd.textContent = state.direction.toUpperCase();
+      movInd.className = `badge ${state.direction === 'up' ? 'bg-primary' : (state.direction === 'down' ? 'bg-info' : 'bg-secondary')}`;
+
+      // Update Digital Readout
+      document.getElementById('digital-floor-readout').textContent = String(state.current_floor).padStart(2, '0');
+      document.getElementById('digital-status-text').textContent = `${state.status.toUpperCase()} • DOORS ${state.door_state.toUpperCase()}`;
+      document.getElementById('sim-door-text').textContent = state.door_state;
+      document.getElementById('sim-speed-text').textContent = `${state.speed_multiplier}x`;
+
+      // Direction Arrows
+      const upArrow = document.getElementById('arrow-up');
+      const downArrow = document.getElementById('arrow-down');
+      if (state.direction === 'up') {
+        upArrow.className = 'bi bi-caret-up-fill digital-arrow active';
+        downArrow.className = 'bi bi-caret-down-fill digital-arrow inactive';
+      } else if (state.direction === 'down') {
+        upArrow.className = 'bi bi-caret-up-fill digital-arrow inactive';
+        downArrow.className = 'bi bi-caret-down-fill digital-arrow active';
+      } else {
+        upArrow.className = 'bi bi-caret-up-fill digital-arrow inactive';
+        downArrow.className = 'bi bi-caret-down-fill digital-arrow inactive';
+      }
+
+      // Check arrival chime
+      if (state.current_floor !== prevFloor) {
+        if (state.door_state === 'opening' || state.door_state === 'open') {
+          window.danfezAudio.playArrivalChime();
+        }
+        prevFloor = state.current_floor;
+      }
+
+      // Render Shaft Levels Axis if not built
+      renderShaftAxis(floorCount, state.current_floor);
+
+      // Position Elevator Car smoothly
+      positionElevatorCar(state.current_floor, floorCount, state.door_state);
+
+      // Render Floor Buttons Keypad
+      renderKeypad(floorCount, state.request_queue, state.current_floor);
+
+      // Render Queue Tags
+      renderQueue(state.request_queue, state.target_floor);
+
+      // Render Terminal Events
+      renderEvents(state.events);
+    }
+
+    function renderShaftAxis(totalFloors, currentFloor) {
+      const axis = document.getElementById('floors-axis');
+      if (axis.children.length !== totalFloors) {
+        axis.innerHTML = '';
+        for (let i = 1; i <= totalFloors; i++) {
+          const div = document.createElement('div');
+          div.className = `floor-marker ${i === currentFloor ? 'active-level' : ''}`;
+          div.id = `floor-marker-${i}`;
+          div.textContent = `F${i}`;
+          axis.appendChild(div);
+        }
+      } else {
+        for (let i = 1; i <= totalFloors; i++) {
+          const m = document.getElementById(`floor-marker-${i}`);
+          if (m) {
+            if (i === currentFloor) {
+              m.classList.add('active-level');
+            } else {
+              m.classList.remove('active-level');
+            }
+          }
+        }
+      }
+    }
+
+    function positionElevatorCar(currentFloor, totalFloors, doorState) {
+      const car = document.getElementById('elevator-car');
+      const shaft = document.getElementById('shaft-viewport');
+      const interiorFloor = document.getElementById('car-interior-floor');
+      if (!car || !shaft) return;
+
+      const shaftHeight = shaft.clientHeight;
+      const carHeight = car.clientHeight;
+      const padding = 12;
+      const usableHeight = shaftHeight - carHeight - (padding * 2);
+
+      const floorFraction = (currentFloor - 1) / Math.max(totalFloors - 1, 1);
+      const bottomPos = padding + (floorFraction * usableHeight);
+
+      car.style.bottom = `${bottomPos}px`;
+      if (interiorFloor) interiorFloor.textContent = currentFloor;
+
+      // Handle Door open/close CSS classes
+      const container = document.getElementById('door-container');
+      if (doorState === 'open' || doorState === 'opening') {
+        container.className = 'door-container doors-open';
+      } else {
+        container.className = 'door-container';
+      }
+    }
+
+    function renderKeypad(totalFloors, queue, currentFloor) {
+      const grid = document.getElementById('keypad-grid');
+      // Build buttons if not exists or floor count changed
+      if (grid.children.length !== totalFloors) {
+        grid.innerHTML = '';
+        // 10 down to 1
+        for (let f = totalFloors; f >= 1; f--) {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'floor-btn';
+          btn.id = `btn-floor-${f}`;
+          btn.innerHTML = `Floor ${f}`;
+          btn.onclick = () => callFloor(f);
+          grid.appendChild(btn);
+        }
+      }
+
+      // Update active queue lighting
+      for (let f = 1; f <= totalFloors; f++) {
+        const btn = document.getElementById(`btn-floor-${f}`);
+        if (btn) {
+          if (queue && queue.includes(f)) {
+            btn.classList.add('active-target');
+          } else {
+            btn.classList.remove('active-target');
+          }
+        }
+      }
+    }
+
+    function renderQueue(queue, targetFloor) {
+      const cont = document.getElementById('request-queue-container');
+      const nextText = document.getElementById('next-target-text');
+
+      if (!queue || queue.length === 0) {
+        cont.innerHTML = '<span class="badge bg-secondary bg-opacity-50 text-white">Queue Empty &bull; Idle</span>';
+        nextText.textContent = 'None';
+        return;
+      }
+
+      nextText.textContent = `Floor ${targetFloor}`;
+      cont.innerHTML = queue.map(f => `
+        <span class="badge bg-primary bg-opacity-75 text-white py-1 px-2 border border-info border-opacity-50">
+          Floor ${f}
+        </span>
+      `).join('');
+    }
+
+    function renderEvents(events) {
+      const term = document.getElementById('sim-terminal');
+      if (!events || events.length === 0) return;
+      term.innerHTML = events.slice(0, 15).map(ev => {
+        let cls = 'sim-terminal-line';
+        if (ev.type === 'ARRIVAL') cls += ' event-arrival';
+        if (ev.type === 'CRITICAL' || ev.type === 'FAULT') cls += ' event-critical';
+        if (ev.type === 'DOOR') cls += ' event-door';
+        if (ev.type === 'CALL') cls += ' event-call';
+        return `<div class="${cls}">[${ev.timestamp}] ${ev.message}</div>`;
+      }).join('');
+    }
+
+    async function callFloor(f) {
+      window.danfezAudio.playButtonBeep();
+      try {
+        const res = await window.danfezApi.callFloor(activeElevatorId, f);
+        window.showToast('Call Placed', `Floor ${f} added to elevator dispatch queue.`, 'info');
+      } catch (err) {
+        window.showToast('Dispatch Blocked', err.message, 'warning');
+      }
+    }
+
+    async function handleDoorAction(action) {
+      window.danfezAudio.playButtonBeep();
+      try {
+        await window.danfezApi.doorAction(activeElevatorId, action);
+      } catch (err) {
+        window.showToast('Door Action Error', err.message, 'warning');
+      }
+    }
+
+    async function triggerEmergencyStop() {
+      window.danfezAudio.playWarningAlarm();
+      if (!confirm('⚠️ TRIGGER SIMULATED EMERGENCY STOP?\n\nThis will actuate the software emergency brake circuit and place the elevator into fault state.')) {
+        return;
+      }
+      try {
+        const res = await window.danfezApi.emergencyStop(activeElevatorId);
+        window.showToast('EMERGENCY STOP', res.message, 'danger');
+        await fetchSimulatorStatus();
+      } catch (err) {
+        window.showToast('Action Failed', err.message, 'danger');
+      }
+    }
+
+    async function resetSimulator() {
+      window.danfezAudio.playButtonBeep();
+      try {
+        await window.danfezApi.resetSimulator(activeElevatorId);
+        window.showToast('Reset Complete', 'Elevator returned to Floor 1 operational state.', 'success');
+        await fetchSimulatorStatus();
+      } catch (err) {
+        window.showToast('Reset Failed', err.message, 'danger');
+      }
+    }
+
+    async function setSpeed(mult) {
+      window.danfezAudio.playButtonBeep();
+      try {
+        await window.danfezApi.setSimulatorSpeed(activeElevatorId, mult);
+        document.querySelectorAll('.speed-btn').forEach(b => {
+          if (parseFloat(b.dataset.speed) === mult) b.classList.add('active');
+          else b.classList.remove('active');
+        });
+        window.showToast('Simulation Speed', `Speed set to ${mult}x multiplier.`, 'info');
+      } catch (err) {
+        window.showToast('Speed Change Failed', err.message, 'danger');
+      }
+    }
+
+    // Inject Test Fault
+    document.getElementById('test-fault-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const payload = {
+        category: document.getElementById('fault-category').value,
+        severity: document.getElementById('fault-severity').value,
+        description: document.getElementById('fault-description').value.trim()
+      };
+
+      try {
+        await window.danfezApi.injectTestFault(activeElevatorId, payload);
+        bootstrap.Modal.getInstance(document.getElementById('testFaultModal')).hide();
+        window.showToast('Test Fault Injected', `${payload.severity} severity fault logged.`, 'warning');
+        await fetchSimulatorStatus();
+      } catch (err) {
+        window.showToast('Injection Failed', err.message, 'danger');
+      }
+    });
+  </script>
+</body>
+</html>

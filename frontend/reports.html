@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reports & Analytics — Danfez Lift Control</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/svg+xml" href="/assets/icons/danfez-logo.svg">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/assets/css/danfez-theme.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="app-wrapper">
+    <!-- Desktop Sidebar -->
+    <aside class="danfez-sidebar">
+      <div class="sidebar-brand">
+        <a href="/dashboard.html" class="d-flex align-items-center text-decoration-none">
+          <div class="d-inline-flex p-2 rounded-3 bg-navy-secondary border border-secondary border-opacity-25 me-2">
+            <i class="bi bi-building-up fs-5 text-danfez-cyan"></i>
+          </div>
+          <div>
+            <div class="fw-bold text-white small" style="letter-spacing: 1px;">DANFEZ TECH</div>
+            <div class="text-danfez-blue" style="font-size: 0.72rem; font-weight: 600;">LIFT CONTROL</div>
+          </div>
+        </a>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-category">Main Operations</div>
+        <a href="/dashboard.html" class="nav-link"><i class="bi bi-speedometer2"></i> Dashboard</a>
+        <a href="/lifts.html" class="nav-link"><i class="bi bi-building"></i> Lift Monitoring</a>
+        <a href="/simulator.html" class="nav-link"><i class="bi bi-play-circle"></i> Floor Simulator</a>
+
+        <div class="nav-category">Fleet & Service</div>
+        <a href="/maintenance.html" class="nav-link"><i class="bi bi-tools"></i> Maintenance</a>
+        <a href="/alerts.html" class="nav-link"><i class="bi bi-shield-exclamation"></i> Fault & Alert Center</a>
+        <a href="/technicians.html" class="nav-link"><i class="bi bi-person-badge"></i> Technicians</a>
+        <a href="/reports.html" class="nav-link active"><i class="bi bi-graph-up-arrow"></i> Reports & Analytics</a>
+
+        <div class="nav-category admin-only">Administration</div>
+        <a href="/users.html" class="nav-link admin-only"><i class="bi bi-people"></i> User Management</a>
+        <a href="/settings.html" class="nav-link admin-only"><i class="bi bi-gear"></i> Settings & Audit</a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center overflow-hidden">
+            <div class="rounded-circle bg-primary bg-opacity-25 text-danfez-cyan p-2 me-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+              <i class="bi bi-person-fill"></i>
+            </div>
+            <div class="overflow-hidden">
+              <div id="user-display-name" class="text-white text-truncate small fw-semibold">Admin User</div>
+              <span id="user-display-role" class="badge bg-primary bg-opacity-25 text-danfez-cyan px-2 py-0" style="font-size: 0.65rem;">ADMIN</span>
+            </div>
+          </div>
+          <button class="btn btn-link text-white-50 p-1" onclick="window.DanfezAuth.logout()" title="Logout">
+            <i class="bi bi-box-arrow-right fs-5"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="danfez-main">
+      <header class="danfez-topbar">
+        <div class="d-flex align-items-center">
+          <button id="sidebar-toggle-btn" class="btn btn-light d-lg-none me-2" aria-label="Toggle navigation">
+            <i class="bi bi-list fs-5"></i>
+          </button>
+          <div>
+            <h5 class="fw-bold text-navy mb-0">Reports & Analytics Engine</h5>
+            <small class="text-secondary d-none d-sm-inline">Equipment availability, fault frequencies & maintenance metrics</small>
+          </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+          <!-- Date Filter Selector -->
+          <select id="time-range-select" class="form-select form-select-sm rounded-pill fw-semibold" style="width: auto;">
+            <option value="30">Past 30 Days</option>
+            <option value="90">Past Quarter</option>
+            <option value="365">This Year</option>
+            <option value="all" selected>All Time Records</option>
+          </select>
+
+          <a href="/profile.html" class="btn btn-light rounded-circle" style="width: 38px; height: 38px;">
+            <i class="bi bi-person"></i>
+          </a>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <!-- Demo Data Label Notice -->
+        <div class="alert alert-secondary border-0 rounded-4 py-2 px-3 mb-4 d-flex align-items-center justify-content-between bg-white shadow-sm">
+          <div class="d-flex align-items-center small">
+            <i class="bi bi-database-check text-primary fs-5 me-2"></i>
+            <span><strong>DATABASE-DERIVED METRICS:</strong> Aggregated from recorded work orders and simulated safety fault logs. Clearly labeled for demo environment.</span>
+          </div>
+          <span class="badge bg-light text-navy border">Real-time sync</span>
+        </div>
+
+        <!-- 4 Chart Grid -->
+        <div class="row g-4 mb-4">
+          <!-- 1. Faults by Severity (Doughnut) -->
+          <div class="col-lg-6">
+            <div class="card p-4 h-100">
+              <h6 class="fw-bold text-navy mb-1">Faults by Severity Distribution</h6>
+              <small class="text-secondary mb-3">Critical, High, Medium, and Low severity classifications</small>
+              <div style="height: 260px;">
+                <canvas id="chartFaultSeverity"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Maintenance by Status (Pie) -->
+          <div class="col-lg-6">
+            <div class="card p-4 h-100">
+              <h6 class="fw-bold text-navy mb-1">Work Orders by Operational Status</h6>
+              <small class="text-secondary mb-3">Open, In Progress, On Hold, Resolved & Closed</small>
+              <div style="height: 260px;">
+                <canvas id="chartMaintenanceStatus"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Monthly Trends (Grouped Bar) -->
+          <div class="col-lg-7">
+            <div class="card p-4 h-100">
+              <h6 class="fw-bold text-navy mb-1">Monthly Service & Fault Frequencies</h6>
+              <small class="text-secondary mb-3">6-month trend comparison of work orders vs telemetry alerts</small>
+              <div style="height: 280px;">
+                <canvas id="chartMonthlyTrend"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. Elevator Availability Uptime Scores -->
+          <div class="col-lg-5">
+            <div class="card p-4 h-100">
+              <h6 class="fw-bold text-navy mb-1">Elevator Fleet Availability Index</h6>
+              <small class="text-secondary mb-3">Calculated availability uptime scores across towers</small>
+              <div style="height: 280px;">
+                <canvas id="chartElevatorUptime"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CSV Export Hub -->
+        <div class="card p-4">
+          <h6 class="fw-bold text-navy mb-2">Data Export Center</h6>
+          <p class="text-secondary small mb-3">
+            Generate and download comma-separated value (CSV) reports for auditing, building compliance, or external maintenance record archives.
+          </p>
+          <div class="row g-3">
+            <div class="col-6 col-md-3">
+              <a href="/api/reports/export/tickets" class="btn btn-outline-primary w-100 py-3 rounded-4 text-center d-block text-decoration-none">
+                <i class="bi bi-file-earmark-spreadsheet fs-3 d-block mb-1"></i>
+                <strong class="d-block text-navy small">Maintenance Work Orders</strong>
+                <small class="text-muted" style="font-size: 0.72rem;">CSV Export</small>
+              </a>
+            </div>
+            <div class="col-6 col-md-3">
+              <a href="/api/reports/export/faults" class="btn btn-outline-danger w-100 py-3 rounded-4 text-center d-block text-decoration-none">
+                <i class="bi bi-file-earmark-spreadsheet fs-3 d-block mb-1"></i>
+                <strong class="d-block text-navy small">Fault & Safety Alerts</strong>
+                <small class="text-muted" style="font-size: 0.72rem;">CSV Export</small>
+              </a>
+            </div>
+            <div class="col-6 col-md-3">
+              <a href="/api/reports/export/technicians" class="btn btn-outline-success w-100 py-3 rounded-4 text-center d-block text-decoration-none">
+                <i class="bi bi-file-earmark-spreadsheet fs-3 d-block mb-1"></i>
+                <strong class="d-block text-navy small">Technicians Roster</strong>
+                <small class="text-muted" style="font-size: 0.72rem;">CSV Export</small>
+              </a>
+            </div>
+            <div class="col-6 col-md-3">
+              <a href="/api/reports/export/audit" class="btn btn-outline-secondary w-100 py-3 rounded-4 text-center d-block text-decoration-none">
+                <i class="bi bi-file-earmark-spreadsheet fs-3 d-block mb-1"></i>
+                <strong class="d-block text-navy small">System Audit Trail</strong>
+                <small class="text-muted" style="font-size: 0.72rem;">CSV Export</small>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Mobile Bottom Navigation -->
+  <nav class="mobile-bottom-nav">
+    <a href="/dashboard.html" class="mobile-nav-item" data-page="dashboard"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a>
+    <a href="/lifts.html" class="mobile-nav-item" data-page="lifts"><i class="bi bi-building"></i><span>Lifts</span></a>
+    <a href="/simulator.html" class="mobile-nav-item" data-page="simulator"><i class="bi bi-play-circle"></i><span>Simulator</span></a>
+    <a href="/alerts.html" class="mobile-nav-item" data-page="alerts"><i class="bi bi-shield-exclamation"></i><span>Alerts</span></a>
+    <a href="#" class="mobile-nav-item" onclick="document.querySelector('.danfez-sidebar').classList.toggle('show'); return false;"><i class="bi bi-grid"></i><span>More</span></a>
+  </nav>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/auth.js"></script>
+  <script src="/assets/js/app.js"></script>
+  <script src="/assets/js/pwa.js"></script>
+
+  <script>
+    let chartSev, chartStatus, chartTrend, chartUptime;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!window.DanfezAuth.requireAuth()) return;
+      window.renderAppShell('reports');
+      await loadAnalytics();
+    });
+
+    async function loadAnalytics() {
+      try {
+        const data = await window.danfezApi.getAnalytics();
+        renderSeverityChart(data.faults_by_severity);
+        renderStatusChart(data.maintenance_by_status);
+        renderTrendChart(data.monthly_trend);
+        renderUptimeChart(data.elevator_uptime);
+      } catch (err) {
+        console.warn('Failed to load analytics:', err);
+      }
+    }
+
+    function renderSeverityChart(sev) {
+      const ctx = document.getElementById('chartFaultSeverity');
+      chartSev = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Critical', 'High', 'Medium', 'Low'],
+          datasets: [{
+            data: [sev.Critical || 0, sev.High || 0, sev.Medium || 0, sev.Low || 0],
+            backgroundColor: ['#E74C3C', '#F5A623', '#168BFF', '#64748B'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'right' } },
+          cutout: '65%'
+        }
+      });
+    }
+
+    function renderStatusChart(st) {
+      const ctx = document.getElementById('chartMaintenanceStatus');
+      const labels = Object.keys(st);
+      const values = Object.values(st);
+
+      chartStatus = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: values,
+            backgroundColor: ['#28D7F2', '#168BFF', '#F5A623', '#94A3B8', '#18A874', '#07162B'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'right' } }
+        }
+      });
+    }
+
+    function renderTrendChart(trend) {
+      const ctx = document.getElementById('chartMonthlyTrend');
+      chartTrend = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: trend.labels,
+          datasets: [
+            {
+              label: 'Maintenance Work Orders',
+              data: trend.tickets,
+              backgroundColor: '#168BFF',
+              borderRadius: 6
+            },
+            {
+              label: 'Telemetry Fault Alerts',
+              data: trend.faults,
+              backgroundColor: '#F5A623',
+              borderRadius: 6
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+            x: { grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    function renderUptimeChart(uptimeList) {
+      const ctx = document.getElementById('chartElevatorUptime');
+      const labels = uptimeList.map(u => u.code);
+      const data = uptimeList.map(u => u.uptime_percentage);
+
+      chartUptime = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Availability %',
+            data: data,
+            backgroundColor: '#18A874',
+            borderRadius: 6
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { min: 80, max: 100, grid: { color: 'rgba(0,0,0,0.05)' } }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maintenance Management — Danfez Lift Control</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/svg+xml" href="/assets/icons/danfez-logo.svg">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/assets/css/danfez-theme.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <!-- Desktop Sidebar -->
+    <aside class="danfez-sidebar">
+      <div class="sidebar-brand">
+        <a href="/dashboard.html" class="d-flex align-items-center text-decoration-none">
+          <div class="d-inline-flex p-2 rounded-3 bg-navy-secondary border border-secondary border-opacity-25 me-2">
+            <i class="bi bi-building-up fs-5 text-danfez-cyan"></i>
+          </div>
+          <div>
+            <div class="fw-bold text-white small" style="letter-spacing: 1px;">DANFEZ TECH</div>
+            <div class="text-danfez-blue" style="font-size: 0.72rem; font-weight: 600;">LIFT CONTROL</div>
+          </div>
+        </a>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-category">Main Operations</div>
+        <a href="/dashboard.html" class="nav-link"><i class="bi bi-speedometer2"></i> Dashboard</a>
+        <a href="/lifts.html" class="nav-link"><i class="bi bi-building"></i> Lift Monitoring</a>
+        <a href="/simulator.html" class="nav-link"><i class="bi bi-play-circle"></i> Floor Simulator</a>
+
+        <div class="nav-category">Fleet & Service</div>
+        <a href="/maintenance.html" class="nav-link active"><i class="bi bi-tools"></i> Maintenance</a>
+        <a href="/alerts.html" class="nav-link"><i class="bi bi-shield-exclamation"></i> Fault & Alert Center</a>
+        <a href="/technicians.html" class="nav-link"><i class="bi bi-person-badge"></i> Technicians</a>
+        <a href="/reports.html" class="nav-link"><i class="bi bi-graph-up-arrow"></i> Reports & Analytics</a>
+
+        <div class="nav-category admin-only">Administration</div>
+        <a href="/users.html" class="nav-link admin-only"><i class="bi bi-people"></i> User Management</a>
+        <a href="/settings.html" class="nav-link admin-only"><i class="bi bi-gear"></i> Settings & Audit</a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center overflow-hidden">
+            <div class="rounded-circle bg-primary bg-opacity-25 text-danfez-cyan p-2 me-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+              <i class="bi bi-person-fill"></i>
+            </div>
+            <div class="overflow-hidden">
+              <div id="user-display-name" class="text-white text-truncate small fw-semibold">Admin User</div>
+              <span id="user-display-role" class="badge bg-primary bg-opacity-25 text-danfez-cyan px-2 py-0" style="font-size: 0.65rem;">ADMIN</span>
+            </div>
+          </div>
+          <button class="btn btn-link text-white-50 p-1" onclick="window.DanfezAuth.logout()" title="Logout">
+            <i class="bi bi-box-arrow-right fs-5"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="danfez-main">
+      <header class="danfez-topbar">
+        <div class="d-flex align-items-center">
+          <button id="sidebar-toggle-btn" class="btn btn-light d-lg-none me-2" aria-label="Toggle navigation">
+            <i class="bi bi-list fs-5"></i>
+          </button>
+          <div>
+            <h5 class="fw-bold text-navy mb-0">Maintenance Management</h5>
+            <small class="text-secondary d-none d-sm-inline">Preventive servicing, inspections & repair work orders</small>
+          </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+          <div class="live-badge online">
+            <span class="pulse-dot"></span> LIVE
+          </div>
+          <a href="/alerts.html" class="btn btn-light position-relative rounded-circle" style="width: 38px; height: 38px;">
+            <i class="bi bi-bell"></i>
+            <span id="topbar-alert-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none">0</span>
+          </a>
+          <a href="/profile.html" class="btn btn-light rounded-circle" style="width: 38px; height: 38px;">
+            <i class="bi bi-person"></i>
+          </a>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <!-- Actions & Filter Bar -->
+        <div class="card p-3 mb-4 shadow-sm">
+          <div class="row g-2 align-items-center">
+            <!-- Search -->
+            <div class="col-12 col-md-4">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
+                <input type="text" id="filter-search" class="form-control bg-light border-start-0" placeholder="Search ticket #, description, category...">
+              </div>
+            </div>
+
+            <!-- Status Filter -->
+            <div class="col-6 col-md-2">
+              <select id="filter-status" class="form-select form-select-sm">
+                <option value="All">All Statuses</option>
+                <option value="Open">Open</option>
+                <option value="Assigned">Assigned</option>
+                <option value="In Progress">In Progress</option>
+                <option value="On Hold">On Hold</option>
+                <option value="Resolved">Resolved</option>
+                <option value="Closed">Closed</option>
+              </select>
+            </div>
+
+            <!-- Priority Filter -->
+            <div class="col-6 col-md-2">
+              <select id="filter-priority" class="form-select form-select-sm">
+                <option value="All">All Priorities</option>
+                <option value="Critical">Critical</option>
+                <option value="High">High</option>
+                <option value="Medium">Medium</option>
+                <option value="Low">Low</option>
+              </select>
+            </div>
+
+            <!-- Elevator Filter -->
+            <div class="col-6 col-md-2">
+              <select id="filter-elevator" class="form-select form-select-sm">
+                <option value="">All Elevators</option>
+                <!-- Populated via API -->
+              </select>
+            </div>
+
+            <!-- Buttons: Create & Export -->
+            <div class="col-6 col-md-2 text-end d-flex gap-1 justify-content-end">
+              <button class="btn btn-outline-secondary btn-sm rounded-pill" onclick="exportCsv()" title="Export CSV">
+                <i class="bi bi-download"></i>
+              </button>
+              <button class="btn btn-primary btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#createTicketModal">
+                <i class="bi bi-plus-lg me-1"></i> New Ticket
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Maintenance Tickets Table -->
+        <div class="card p-4">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="fw-bold text-navy mb-0">Work Order Tickets</h6>
+            <span class="badge bg-light text-dark border" id="tickets-count-badge">0 Tickets</span>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-hover align-middle small mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Ticket #</th>
+                  <th>Elevator</th>
+                  <th>Category</th>
+                  <th>Priority</th>
+                  <th>Status</th>
+                  <th>Technician</th>
+                  <th>Created</th>
+                  <th>Scheduled</th>
+                  <th class="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="tickets-table-body">
+                <tr><td colspan="9" class="text-center py-4 text-muted">Loading maintenance tickets...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Create Ticket Modal -->
+  <div class="modal fade" id="createTicketModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content rounded-4 border-0 shadow-lg">
+        <div class="modal-header border-bottom-0 pb-0">
+          <h5 class="modal-title fw-bold text-navy">Create Maintenance Work Order</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="create-ticket-form">
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Target Elevator</label>
+              <select id="new-ticket-elev" class="form-select" required>
+                <!-- Populated via API -->
+              </select>
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="form-label small fw-semibold">Issue Category</label>
+                <select id="new-ticket-category" class="form-select" required>
+                  <option value="Preventive Maintenance">Preventive Maintenance</option>
+                  <option value="Inspection">Safety Inspection</option>
+                  <option value="Cable/Motor">Cable & Traction Motor</option>
+                  <option value="Door Sensor">Door Sensor & Interlock</option>
+                  <option value="Electrical">Electrical & Controls</option>
+                  <option value="Hydraulic">Hydraulic Circuit</option>
+                  <option value="Software">Controller Logic / Firmware</option>
+                </select>
+              </div>
+              <div class="col-6">
+                <label class="form-label small fw-semibold">Priority</label>
+                <select id="new-ticket-priority" class="form-select" required>
+                  <option value="Low">Low</option>
+                  <option value="Medium" selected>Medium</option>
+                  <option value="High">High</option>
+                  <option value="Critical">Critical</option>
+                </select>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Assign Technician (Optional)</label>
+              <select id="new-ticket-tech" class="form-select">
+                <option value="">Unassigned</option>
+                <!-- Populated via API -->
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Scheduled Date</label>
+              <input type="date" id="new-ticket-date" class="form-control">
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Description of Work / Fault</label>
+              <textarea id="new-ticket-desc" class="form-control" rows="3" placeholder="Describe the maintenance requirements or reported malfunction..." required></textarea>
+            </div>
+          </div>
+          <div class="modal-footer border-top-0 pt-0">
+            <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary rounded-pill px-4">Create Ticket</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ticket Details & Update Modal -->
+  <div class="modal fade" id="ticketDetailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content rounded-4 border-0 shadow-lg">
+        <div class="modal-header border-bottom-0 pb-0">
+          <div>
+            <span class="badge bg-navy-secondary text-danfez-cyan" id="detail-ticket-number">MNT-2026-000</span>
+            <h5 class="modal-title fw-bold text-navy mt-1">Ticket Details & Action</h5>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="update-ticket-form">
+          <input type="hidden" id="detail-ticket-id">
+          <div class="modal-body">
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <div class="p-3 bg-light rounded-3">
+                  <small class="text-secondary d-block">Elevator & Building</small>
+                  <strong class="text-navy" id="detail-elevator-info">-</strong>
+                  <div class="small text-muted mt-1" id="detail-created-info">Created: -</div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="p-3 bg-light rounded-3">
+                  <small class="text-secondary d-block">Current Classification</small>
+                  <span id="detail-category-badge" class="fw-semibold text-navy">-</span>
+                  <div class="mt-1">
+                    <span id="detail-priority-badge" class="badge-status">-</span>
+                    <span id="detail-status-badge" class="badge-status ms-1">-</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold text-navy">Description</label>
+              <div class="p-3 bg-light rounded-3 text-secondary small" id="detail-description-text">-</div>
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold">Update Status</label>
+                <select id="detail-status-select" class="form-select">
+                  <option value="Open">Open</option>
+                  <option value="Assigned">Assigned</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="On Hold">On Hold</option>
+                  <option value="Resolved">Resolved</option>
+                  <option value="Closed">Closed</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold">Assign Technician</label>
+                <select id="detail-technician-select" class="form-select">
+                  <option value="">Unassigned</option>
+                  <!-- Populated via API -->
+                </select>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Resolution Notes & Completion Summary</label>
+              <textarea id="detail-resolution-notes" class="form-control" rows="3" placeholder="Enter findings, parts replaced, and calibration notes when resolving..."></textarea>
+            </div>
+          </div>
+          <div class="modal-footer border-top-0 pt-0">
+            <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Close</button>
+            <button type="submit" class="btn btn-primary rounded-pill px-4">Update Work Order</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Bottom Navigation -->
+  <nav class="mobile-bottom-nav">
+    <a href="/dashboard.html" class="mobile-nav-item" data-page="dashboard"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a>
+    <a href="/lifts.html" class="mobile-nav-item" data-page="lifts"><i class="bi bi-building"></i><span>Lifts</span></a>
+    <a href="/simulator.html" class="mobile-nav-item" data-page="simulator"><i class="bi bi-play-circle"></i><span>Simulator</span></a>
+    <a href="/alerts.html" class="mobile-nav-item" data-page="alerts"><i class="bi bi-shield-exclamation"></i><span>Alerts</span></a>
+    <a href="#" class="mobile-nav-item" onclick="document.querySelector('.danfez-sidebar').classList.toggle('show'); return false;"><i class="bi bi-grid"></i><span>More</span></a>
+  </nav>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/auth.js"></script>
+  <script src="/assets/js/app.js"></script>
+  <script src="/assets/js/pwa.js"></script>
+
+  <script>
+    let ticketsCache = [];
+    let techniciansCache = [];
+    let elevatorsCache = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!window.DanfezAuth.requireAuth()) return;
+      window.renderAppShell('maintenance');
+
+      await loadDropdowns();
+      await fetchTickets();
+
+      // Setup filter events
+      document.getElementById('filter-search').addEventListener('input', debounce(fetchTickets, 300));
+      document.getElementById('filter-status').addEventListener('change', fetchTickets);
+      document.getElementById('filter-priority').addEventListener('change', fetchTickets);
+      document.getElementById('filter-elevator').addEventListener('change', fetchTickets);
+    });
+
+    function debounce(func, delay) {
+      let timer;
+      return function(...args) {
+        clearTimeout(timer);
+        timer = setTimeout(() => func.apply(this, args), delay);
+      };
+    }
+
+    async function loadDropdowns() {
+      try {
+        elevatorsCache = await window.danfezApi.getElevators();
+        techniciansCache = await window.danfezApi.getTechnicians();
+
+        // Elevators
+        const elevFilter = document.getElementById('filter-elevator');
+        const newTicketElev = document.getElementById('new-ticket-elev');
+        const elevOptions = elevatorsCache.map(e => `<option value="${e.id}">${e.code} (${e.name})</option>`).join('');
+        elevFilter.innerHTML = '<option value="">All Elevators</option>' + elevOptions;
+        newTicketElev.innerHTML = elevOptions;
+
+        // Technicians
+        const newTicketTech = document.getElementById('new-ticket-tech');
+        const detailTech = document.getElementById('detail-technician-select');
+        const techOptions = '<option value="">Unassigned</option>' + 
+          techniciansCache.map(t => `<option value="${t.id}">${t.full_name} (${t.status})</option>`).join('');
+        newTicketTech.innerHTML = techOptions;
+        detailTech.innerHTML = techOptions;
+      } catch (e) {}
+    }
+
+    async function fetchTickets() {
+      const search = document.getElementById('filter-search').value.trim();
+      const status = document.getElementById('filter-status').value;
+      const priority = document.getElementById('filter-priority').value;
+      const elevId = document.getElementById('filter-elevator').value;
+
+      const params = {};
+      if (search) params.search = search;
+      if (status && status !== 'All') params.status = status;
+      if (priority && priority !== 'All') params.priority = priority;
+      if (elevId) params.elevator_id = elevId;
+
+      try {
+        ticketsCache = await window.danfezApi.getTickets(params);
+        document.getElementById('tickets-count-badge').textContent = `${ticketsCache.length} Tickets`;
+        renderTicketsTable(ticketsCache);
+      } catch (err) {
+        window.showToast('Error', 'Failed to load maintenance tickets', 'error');
+      }
+    }
+
+    function renderTicketsTable(tickets) {
+      const tbody = document.getElementById('tickets-table-body');
+      if (!tickets || tickets.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-muted">No maintenance tickets matching filter criteria.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = tickets.map(t => {
+        let badgeClass = 'badge-operational';
+        if (t.status === 'In Progress') badgeClass = 'badge-moving';
+        if (t.status === 'Assigned') badgeClass = 'badge-idle';
+        if (t.status === 'On Hold') badgeClass = 'badge-maintenance';
+        if (t.status === 'Open') badgeClass = 'badge-priority-medium';
+
+        const createdStr = new Date(t.created_at).toLocaleDateString();
+        const schedStr = t.scheduled_date ? new Date(t.scheduled_date).toLocaleDateString() : '-';
+
+        return `
+          <tr>
+            <td><strong class="text-navy">${t.ticket_number}</strong></td>
+            <td><span class="badge bg-light text-dark border">${t.elevator_code || 'LIFT'}</span></td>
+            <td>${t.category}</td>
+            <td><span class="badge-status badge-priority-${t.priority.toLowerCase()}">${t.priority}</span></td>
+            <td><span class="badge-status ${badgeClass}">${t.status}</span></td>
+            <td>${t.technician_name}</td>
+            <td class="text-secondary">${createdStr}</td>
+            <td class="text-secondary">${schedStr}</td>
+            <td class="text-end">
+              <button class="btn btn-outline-primary btn-sm rounded-pill py-0 px-2" onclick="openDetailModal(${t.id})" style="font-size: 0.75rem;">
+                Details &bull; Edit
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Create ticket form submission
+    document.getElementById('create-ticket-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const payload = {
+        elevator_id: parseInt(document.getElementById('new-ticket-elev').value),
+        category: document.getElementById('new-ticket-category').value,
+        priority: document.getElementById('new-ticket-priority').value,
+        assigned_technician_id: document.getElementById('new-ticket-tech').value ? parseInt(document.getElementById('new-ticket-tech').value) : null,
+        scheduled_date: document.getElementById('new-ticket-date').value ? new Date(document.getElementById('new-ticket-date').value).toISOString() : null,
+        description: document.getElementById('new-ticket-desc').value.trim()
+      };
+
+      try {
+        await window.danfezApi.createTicket(payload);
+        bootstrap.Modal.getInstance(document.getElementById('createTicketModal')).hide();
+        document.getElementById('create-ticket-form').reset();
+        window.showToast('Ticket Created', 'Work order logged successfully.', 'success');
+        await fetchTickets();
+      } catch (err) {
+        window.showToast('Creation Failed', err.message, 'danger');
+      }
+    });
+
+    // Open detail modal
+    window.openDetailModal = function(id) {
+      const t = ticketsCache.find(x => x.id === id);
+      if (!t) return;
+
+      document.getElementById('detail-ticket-id').value = t.id;
+      document.getElementById('detail-ticket-number').textContent = t.ticket_number;
+      document.getElementById('detail-elevator-info').textContent = `${t.elevator_code} (${t.elevator_name})`;
+      document.getElementById('detail-created-info').textContent = `Created: ${new Date(t.created_at).toLocaleString()}`;
+      document.getElementById('detail-category-badge').textContent = t.category;
+      
+      const pBadge = document.getElementById('detail-priority-badge');
+      pBadge.textContent = t.priority;
+      pBadge.className = `badge-status badge-priority-${t.priority.toLowerCase()}`;
+
+      const sBadge = document.getElementById('detail-status-badge');
+      sBadge.textContent = t.status;
+      sBadge.className = 'badge-status badge-moving';
+
+      document.getElementById('detail-description-text').textContent = t.description;
+      document.getElementById('detail-status-select').value = t.status;
+      document.getElementById('detail-technician-select').value = t.assigned_technician_id || '';
+      document.getElementById('detail-resolution-notes').value = t.resolution_notes || '';
+
+      new bootstrap.Modal(document.getElementById('ticketDetailsModal')).show();
+    };
+
+    // Update ticket
+    document.getElementById('update-ticket-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = parseInt(document.getElementById('detail-ticket-id').value);
+      const payload = {
+        status: document.getElementById('detail-status-select').value,
+        assigned_technician_id: document.getElementById('detail-technician-select').value ? parseInt(document.getElementById('detail-technician-select').value) : null,
+        resolution_notes: document.getElementById('detail-resolution-notes').value.trim() || null
+      };
+
+      try {
+        await window.danfezApi.updateTicket(id, payload);
+        bootstrap.Modal.getInstance(document.getElementById('ticketDetailsModal')).hide();
+        window.showToast('Updated', `Ticket status updated to ${payload.status}`, 'success');
+        await fetchTickets();
+      } catch (err) {
+        window.showToast('Update Failed', err.message, 'danger');
+      }
+    });
+
+    function exportCsv() {
+      window.location.href = window.danfezApi.getExportUrl('tickets');
+    }
+  </script>
+</body>
+</html>

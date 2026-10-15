@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings & Audit Logs — Danfez Lift Control</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/svg+xml" href="/assets/icons/danfez-logo.svg">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/assets/css/danfez-theme.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <!-- Desktop Sidebar -->
+    <aside class="danfez-sidebar">
+      <div class="sidebar-brand">
+        <a href="/dashboard.html" class="d-flex align-items-center text-decoration-none">
+          <div class="d-inline-flex p-2 rounded-3 bg-navy-secondary border border-secondary border-opacity-25 me-2">
+            <i class="bi bi-building-up fs-5 text-danfez-cyan"></i>
+          </div>
+          <div>
+            <div class="fw-bold text-white small" style="letter-spacing: 1px;">DANFEZ TECH</div>
+            <div class="text-danfez-blue" style="font-size: 0.72rem; font-weight: 600;">LIFT CONTROL</div>
+          </div>
+        </a>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-category">Main Operations</div>
+        <a href="/dashboard.html" class="nav-link"><i class="bi bi-speedometer2"></i> Dashboard</a>
+        <a href="/lifts.html" class="nav-link"><i class="bi bi-building"></i> Lift Monitoring</a>
+        <a href="/simulator.html" class="nav-link"><i class="bi bi-play-circle"></i> Floor Simulator</a>
+
+        <div class="nav-category">Fleet & Service</div>
+        <a href="/maintenance.html" class="nav-link"><i class="bi bi-tools"></i> Maintenance</a>
+        <a href="/alerts.html" class="nav-link"><i class="bi bi-shield-exclamation"></i> Fault & Alert Center</a>
+        <a href="/technicians.html" class="nav-link"><i class="bi bi-person-badge"></i> Technicians</a>
+        <a href="/reports.html" class="nav-link"><i class="bi bi-graph-up-arrow"></i> Reports & Analytics</a>
+
+        <div class="nav-category admin-only">Administration</div>
+        <a href="/users.html" class="nav-link admin-only"><i class="bi bi-people"></i> User Management</a>
+        <a href="/settings.html" class="nav-link active admin-only"><i class="bi bi-gear"></i> Settings & Audit</a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center overflow-hidden">
+            <div class="rounded-circle bg-primary bg-opacity-25 text-danfez-cyan p-2 me-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+              <i class="bi bi-person-fill"></i>
+            </div>
+            <div class="overflow-hidden">
+              <div id="user-display-name" class="text-white text-truncate small fw-semibold">Admin User</div>
+              <span id="user-display-role" class="badge bg-primary bg-opacity-25 text-danfez-cyan px-2 py-0" style="font-size: 0.65rem;">ADMIN</span>
+            </div>
+          </div>
+          <button class="btn btn-link text-white-50 p-1" onclick="window.DanfezAuth.logout()" title="Logout">
+            <i class="bi bi-box-arrow-right fs-5"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="danfez-main">
+      <header class="danfez-topbar">
+        <div class="d-flex align-items-center">
+          <button id="sidebar-toggle-btn" class="btn btn-light d-lg-none me-2" aria-label="Toggle navigation">
+            <i class="bi bi-list fs-5"></i>
+          </button>
+          <div>
+            <h5 class="fw-bold text-navy mb-0">System Configuration & Audit</h5>
+            <small class="text-secondary d-none d-sm-inline">Facility thresholds, notification policies & security events</small>
+          </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+          <a href="/profile.html" class="btn btn-light rounded-circle" style="width: 38px; height: 38px;">
+            <i class="bi bi-person"></i>
+          </a>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <!-- Settings Form Card -->
+        <div class="card p-4 mb-4 shadow-sm">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+              <h6 class="fw-bold text-navy mb-0">Facility & Simulation Parameters</h6>
+              <small class="text-secondary">Global defaults applied to building shafts and virtual simulators</small>
+            </div>
+            <span class="badge bg-primary bg-opacity-10 text-primary">Admin Control</span>
+          </div>
+
+          <form id="settings-form">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold">Primary Building Facility Name</label>
+                <input type="text" id="cfg-building-name" class="form-control" placeholder="e.g. Danfez HQ Tower" required>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold">Emergency Dispatch Telephone Hotline</label>
+                <input type="text" id="cfg-emergency-phone" class="form-control" placeholder="+1 (800) 555-DANFEZ" required>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label small fw-semibold">Default Floor Count for New Lifts</label>
+                <input type="number" id="cfg-default-floors" class="form-control" min="2" max="50" required>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label small fw-semibold">Default Simulation Speed Multiplier</label>
+                <select id="cfg-sim-speed" class="form-select">
+                  <option value="0.5">0.5x Slow Motion</option>
+                  <option value="1.0">1.0x Real-time Normal</option>
+                  <option value="2.0">2.0x Double Speed</option>
+                  <option value="5.0">5.0x Accelerated Testing</option>
+                </select>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label small fw-semibold">Preventive Maintenance Interval (Days)</label>
+                <input type="number" id="cfg-maint-interval" class="form-control" min="7" max="180" required>
+              </div>
+
+              <div class="col-12">
+                <div class="form-check form-switch pt-2">
+                  <input class="form-check-input" type="checkbox" id="cfg-notifications" checked>
+                  <label class="form-check-label small fw-semibold text-navy" for="cfg-notifications">
+                    Enable High & Critical Fault Automated Dispatch Alerts
+                  </label>
+                  <div class="text-secondary small">Automatically alerts assigned on-duty field engineers when safety circuits trip.</div>
+                </div>
+              </div>
+
+              <div class="col-12 text-end pt-2 border-top">
+                <button type="submit" class="btn btn-primary rounded-pill px-4">
+                  <i class="bi bi-save me-1"></i> Save Configuration
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- Audit Log Viewer Card -->
+        <div class="card p-4">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+              <h6 class="fw-bold text-navy mb-0">System Security & Audit Log</h6>
+              <small class="text-secondary">Immutable log of dispatcher actions, emergency actuations, and logins</small>
+            </div>
+            <a href="/api/reports/export/audit" class="btn btn-outline-secondary btn-sm rounded-pill">
+              <i class="bi bi-download me-1"></i> Export Audit Log (CSV)
+            </a>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-hover align-middle small mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Timestamp</th>
+                  <th>User Email</th>
+                  <th>Action</th>
+                  <th>Target Resource</th>
+                  <th>Details</th>
+                  <th>IP Address</th>
+                </tr>
+              </thead>
+              <tbody id="audit-table-body">
+                <tr><td colspan="6" class="text-center py-4 text-muted">Loading audit entries...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Mobile Bottom Navigation -->
+  <nav class="mobile-bottom-nav">
+    <a href="/dashboard.html" class="mobile-nav-item" data-page="dashboard"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a>
+    <a href="/lifts.html" class="mobile-nav-item" data-page="lifts"><i class="bi bi-building"></i><span>Lifts</span></a>
+    <a href="/simulator.html" class="mobile-nav-item" data-page="simulator"><i class="bi bi-play-circle"></i><span>Simulator</span></a>
+    <a href="/alerts.html" class="mobile-nav-item" data-page="alerts"><i class="bi bi-shield-exclamation"></i><span>Alerts</span></a>
+    <a href="#" class="mobile-nav-item" onclick="document.querySelector('.danfez-sidebar').classList.toggle('show'); return false;"><i class="bi bi-grid"></i><span>More</span></a>
+  </nav>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/auth.js"></script>
+  <script src="/assets/js/app.js"></script>
+  <script src="/assets/js/pwa.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!window.DanfezAuth.requireAuth(['admin'])) return;
+      window.renderAppShell('settings');
+
+      await loadSettings();
+      await loadAuditLogs();
+    });
+
+    async function loadSettings() {
+      try {
+        const settings = await window.danfezApi.getSettings();
+        const map = {};
+        settings.forEach(s => { map[s.key] = s.value; });
+
+        if (map['building_name']) document.getElementById('cfg-building-name').value = map['building_name'];
+        if (map['emergency_phone']) document.getElementById('cfg-emergency-phone').value = map['emergency_phone'];
+        if (map['default_floors']) document.getElementById('cfg-default-floors').value = map['default_floors'];
+        if (map['simulation_speed']) document.getElementById('cfg-sim-speed').value = map['simulation_speed'];
+        if (map['maintenance_interval_days']) document.getElementById('cfg-maint-interval').value = map['maintenance_interval_days'];
+        if (map['email_notifications_enabled']) document.getElementById('cfg-notifications').checked = map['email_notifications_enabled'] === 'true';
+      } catch (err) {
+        console.warn('Failed to load settings:', err);
+      }
+    }
+
+    async function loadAuditLogs() {
+      try {
+        const logs = await window.danfezApi.getAuditLogs(0, 50);
+        const tbody = document.getElementById('audit-table-body');
+        if (!logs || logs.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No audit entries found.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = logs.map(l => `
+          <tr>
+            <td class="text-nowrap text-secondary">${new Date(l.timestamp).toLocaleString()}</td>
+            <td><strong class="text-navy">${l.user_email || 'System'}</strong></td>
+            <td><span class="badge bg-navy-secondary text-danfez-cyan">${l.action}</span></td>
+            <td><code>${l.resource}</code></td>
+            <td class="text-secondary">${l.details || '-'}</td>
+            <td><small class="text-muted">${l.ip_address || '127.0.0.1'}</small></td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        console.warn('Failed to load audit logs:', err);
+      }
+    }
+
+    // Save settings
+    document.getElementById('settings-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const payload = {
+        building_name: document.getElementById('cfg-building-name').value.trim(),
+        emergency_phone: document.getElementById('cfg-emergency-phone').value.trim(),
+        default_floors: parseInt(document.getElementById('cfg-default-floors').value),
+        simulation_speed: parseFloat(document.getElementById('cfg-sim-speed').value),
+        maintenance_interval_days: parseInt(document.getElementById('cfg-maint-interval').value),
+        email_notifications_enabled: document.getElementById('cfg-notifications').checked
+      };
+
+      try {
+        await window.danfezApi.updateBatchSettings(payload);
+        window.showToast('Settings Saved', 'System configurations updated.', 'success');
+        await loadAuditLogs();
+      } catch (err) {
+        window.showToast('Save Failed', err.message, 'danger');
+      }
+    });
+  </script>
+</body>
+</html>
