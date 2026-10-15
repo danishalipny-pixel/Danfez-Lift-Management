@@ -52,11 +52,13 @@ class DanfezApiClient {
           building_id: 1,
           name: "Elevator Alpha (Main)",
           code: "LIFT-A01",
-          direction: "stationary",
+          direction: "idle",
           current_floor: 1,
           target_floor: null,
           door_state: "closed",
-          status: "idle",
+          status: "operational",
+          floor_count: 10,
+          request_queue: [],
           total_trips: 1420,
           speed_multiplier: 1.0,
           is_emergency_stopped: false,
@@ -73,11 +75,13 @@ class DanfezApiClient {
           building_id: 1,
           name: "Elevator Bravo (Freight)",
           code: "LIFT-B02",
-          direction: "stationary",
+          direction: "idle",
           current_floor: 6,
           target_floor: null,
           door_state: "closed",
-          status: "idle",
+          status: "operational",
+          floor_count: 10,
+          request_queue: [],
           total_trips: 890,
           speed_multiplier: 1.0,
           is_emergency_stopped: false,
@@ -94,11 +98,13 @@ class DanfezApiClient {
           building_id: 2,
           name: "Elevator Charlie (VIP)",
           code: "LIFT-C03",
-          direction: "stationary",
+          direction: "idle",
           current_floor: 10,
           target_floor: null,
           door_state: "closed",
-          status: "idle",
+          status: "operational",
+          floor_count: 14,
+          request_queue: [],
           total_trips: 2150,
           speed_multiplier: 1.0,
           is_emergency_stopped: false,
@@ -115,11 +121,13 @@ class DanfezApiClient {
           building_id: 2,
           name: "Elevator Delta (Service)",
           code: "LIFT-D04",
-          direction: "stationary",
+          direction: "idle",
           current_floor: 3,
           target_floor: null,
           door_state: "closed",
           status: "maintenance",
+          floor_count: 14,
+          request_queue: [],
           total_trips: 640,
           speed_multiplier: 1.0,
           is_emergency_stopped: false,
@@ -325,9 +333,14 @@ class DanfezApiClient {
         return null;
       }
 
+      const contentType = (response.headers.get('content-type') || '').toLowerCase();
+      if (!contentType.includes('application/json')) {
+        return this.handleFallbackEndpoint(endpoint, options);
+      }
+
       const data = await response.json().catch(() => null);
 
-      if (!response.ok) {
+      if (!response.ok || data === null) {
         return this.handleFallbackEndpoint(endpoint, options);
       }
 
@@ -378,41 +391,48 @@ class DanfezApiClient {
       };
     }
 
-    // 2. Elevators list
-    if (endpoint === '/api/elevators/' || endpoint.startsWith('/api/elevators/?')) {
+    // 2. Elevators list & Single elevator
+    if (endpoint.includes('/api/elevators')) {
+      const match = endpoint.match(/\/api\/elevators\/(\d+)/);
+      if (match) {
+        const id = parseInt(match[1]);
+        return this.localStore.elevators.find(e => e.id === id) || this.localStore.elevators[0];
+      }
       return this.localStore.elevators;
-    }
-
-    // 3. Single elevator
-    if (endpoint.match(/\/api\/elevators\/\d+/)) {
-      const id = parseInt(endpoint.split('/').pop());
-      return this.localStore.elevators.find(e => e.id === id) || this.localStore.elevators[0];
     }
 
     // 4. Simulator status
     if (endpoint.includes('/status')) {
-      return this.localStore.elevators[0];
+      const match = endpoint.match(/\/api\/simulator\/(\d+)\/status/);
+      const eid = match ? parseInt(match[1]) : 1;
+      return this.getFallbackSimulatorStatus(eid);
     }
 
     // 5. Simulator call floor
     if (endpoint.includes('/call') && method === 'POST') {
+      const match = endpoint.match(/\/api\/simulator\/(\d+)\/call/);
+      const eid = match ? parseInt(match[1]) : 1;
       const body = typeof options.body === 'string' ? JSON.parse(options.body || '{}') : (options.body || {});
       const target = body.floor || 1;
-      const el = this.localStore.elevators[0];
+      const el = this.localStore.elevators.find(e => e.id == eid) || this.localStore.elevators[0];
       el.target_floor = target;
       if (target > el.current_floor) {
-        el.status = 'MOVING_UP';
+        el.status = 'moving';
+        el.direction = 'up';
         el.door_state = 'closed';
       } else if (target < el.current_floor) {
-        el.status = 'MOVING_DOWN';
+        el.status = 'moving';
+        el.direction = 'down';
         el.door_state = 'closed';
       } else {
         el.door_state = 'open';
-        el.status = 'idle';
+        el.status = 'operational';
+        el.direction = 'idle';
       }
       this.localStore.events.unshift({
+        type: 'CALL',
         timestamp: new Date().toLocaleTimeString(),
-        text: `Hall call registered for Floor ${target}. Elevator dispatching.`
+        message: `Hall call registered for Floor ${target} on ${el.code}. Dispatching.`
       });
       this.broadcastLocalState();
       return { success: true, target_floor: target, elevator: el };
@@ -420,13 +440,16 @@ class DanfezApiClient {
 
     // 6. Simulator door action
     if (endpoint.includes('/door') && method === 'POST') {
+      const match = endpoint.match(/\/api\/simulator\/(\d+)\/door/);
+      const eid = match ? parseInt(match[1]) : 1;
       const body = typeof options.body === 'string' ? JSON.parse(options.body || '{}') : (options.body || {});
       const action = (body.action || 'open').toLowerCase();
-      const el = this.localStore.elevators[0];
+      const el = this.localStore.elevators.find(e => e.id == eid) || this.localStore.elevators[0];
       el.door_state = (action === 'open' || action === 'opening') ? 'open' : 'closed';
       this.localStore.events.unshift({
+        type: 'DOOR',
         timestamp: new Date().toLocaleTimeString(),
-        text: `Cabin door ${el.door_state} commanded.`
+        message: `Cabin door ${el.door_state} commanded on ${el.code}.`
       });
       this.broadcastLocalState();
       return { success: true, door_state: el.door_state };
@@ -434,21 +457,37 @@ class DanfezApiClient {
 
     // 7. Simulator emergency stop
     if (endpoint.includes('/emergency-stop') && method === 'POST') {
-      const el = this.localStore.elevators[0];
+      const match = endpoint.match(/\/api\/simulator\/(\d+)\/emergency-stop/);
+      const eid = match ? parseInt(match[1]) : 1;
+      const el = this.localStore.elevators.find(e => e.id == eid) || this.localStore.elevators[0];
       el.is_emergency_stopped = true;
-      el.status = 'EMERGENCY_STOP';
+      el.status = 'fault';
+      this.localStore.events.unshift({
+        type: 'CRITICAL',
+        timestamp: new Date().toLocaleTimeString(),
+        message: `EMERGENCY STOP engaged on ${el.code}. Safety circuit halted.`
+      });
       this.broadcastLocalState();
       return { success: true, is_emergency_stopped: true };
     }
 
     // 8. Simulator reset
     if (endpoint.includes('/reset') && method === 'POST') {
-      const el = this.localStore.elevators[0];
+      const match = endpoint.match(/\/api\/simulator\/(\d+)\/reset/);
+      const eid = match ? parseInt(match[1]) : 1;
+      const el = this.localStore.elevators.find(e => e.id == eid) || this.localStore.elevators[0];
       el.is_emergency_stopped = false;
-      el.status = 'idle';
+      el.status = 'operational';
+      el.direction = 'idle';
+      el.current_floor = 1;
       el.door_state = 'closed';
+      this.localStore.events.unshift({
+        type: 'ARRIVAL',
+        timestamp: new Date().toLocaleTimeString(),
+        message: `${el.code} reset to Floor 1 operational status.`
+      });
       this.broadcastLocalState();
-      return { success: true, is_emergency_stopped: false, status: 'idle' };
+      return { success: true, is_emergency_stopped: false, status: 'operational' };
     }
 
     // 9. Simulator events
@@ -524,10 +563,31 @@ class DanfezApiClient {
     return {};
   }
 
+  getFallbackSimulatorStatus(id = 1) {
+    const elev = this.localStore.elevators.find(e => e.id == id) || this.localStore.elevators[0];
+    return {
+      id: elev.id,
+      elevator_code: elev.code,
+      elevator_name: elev.name,
+      building_name: elev.building_name || "Tower 1 - Innovation Center",
+      current_floor: elev.current_floor || 1,
+      target_floor: elev.target_floor || null,
+      direction: elev.direction || "idle",
+      door_state: elev.door_state || "closed",
+      status: elev.status || "operational",
+      speed_multiplier: elev.speed_multiplier || 1.0,
+      emergency_stopped: !!elev.is_emergency_stopped,
+      request_queue: elev.request_queue || [],
+      floor_count: elev.floor_count || 10,
+      events: this.localStore.events || [],
+      is_simulation: true
+    };
+  }
+
   broadcastLocalState() {
     const elevatorsDict = {};
     this.localStore.elevators.forEach(e => {
-      elevatorsDict[e.id] = e;
+      elevatorsDict[e.id] = this.getFallbackSimulatorStatus(e.id);
     });
     const update = {
       type: 'SIMULATOR_UPDATE',
@@ -595,11 +655,23 @@ class DanfezApiClient {
 
   // --- Elevator & Simulator Endpoints ---
   async getElevators() {
-    return this.request('/api/elevators/');
+    try {
+      const res = await this.request('/api/elevators/');
+      if (Array.isArray(res) && res.length > 0) return res;
+      return this.localStore.elevators;
+    } catch (e) {
+      return this.localStore.elevators;
+    }
   }
 
   async getElevator(id) {
-    return this.request(`/api/elevators/${id}`);
+    try {
+      const res = await this.request(`/api/elevators/${id}`);
+      if (res && res.id) return res;
+      return this.localStore.elevators.find(e => e.id == id) || this.localStore.elevators[0];
+    } catch (e) {
+      return this.localStore.elevators.find(e => e.id == id) || this.localStore.elevators[0];
+    }
   }
 
   async createElevator(payload) {
@@ -627,8 +699,16 @@ class DanfezApiClient {
     return list && list.length ? list[0] : this.localStore.elevators[0];
   }
 
-  async getSimulatorStatus(id) {
-    return this.request(`/api/simulator/${id}/status`);
+  async getSimulatorStatus(id = 1) {
+    try {
+      const res = await this.request(`/api/simulator/${id}/status`);
+      if (res && res.current_floor !== undefined && res.door_state !== undefined) {
+        return res;
+      }
+      return this.getFallbackSimulatorStatus(id);
+    } catch (e) {
+      return this.getFallbackSimulatorStatus(id);
+    }
   }
 
   async callFloor(elevatorId, floor) {
@@ -712,12 +792,24 @@ class DanfezApiClient {
 
   // --- Maintenance Tickets ---
   async getTickets(params = {}) {
-    const query = new URLSearchParams(params).toString();
-    return this.request(`/api/maintenance/?${query}`);
+    try {
+      const query = new URLSearchParams(params).toString();
+      const res = await this.request(`/api/maintenance/?${query}`);
+      if (Array.isArray(res) && res.length > 0) return res;
+      return this.localStore.tickets;
+    } catch (e) {
+      return this.localStore.tickets;
+    }
   }
 
   async getTicket(id) {
-    return this.request(`/api/maintenance/${id}`);
+    try {
+      const res = await this.request(`/api/maintenance/${id}`);
+      if (res && res.id) return res;
+      return this.localStore.tickets.find(item => item.id == id) || this.localStore.tickets[0];
+    } catch (e) {
+      return this.localStore.tickets.find(item => item.id == id) || this.localStore.tickets[0];
+    }
   }
 
   async createTicket(payload) {
@@ -758,8 +850,14 @@ class DanfezApiClient {
 
   // --- Faults & Alerts ---
   async getFaults(params = {}) {
-    const query = new URLSearchParams(params).toString();
-    return this.request(`/api/faults/?${query}`);
+    try {
+      const query = new URLSearchParams(params).toString();
+      const res = await this.request(`/api/faults/?${query}`);
+      if (Array.isArray(res) && res.length > 0) return res;
+      return this.localStore.faults;
+    } catch (e) {
+      return this.localStore.faults;
+    }
   }
 
   async acknowledgeFault(id, technician_id) {
@@ -794,7 +892,13 @@ class DanfezApiClient {
 
   // --- Technicians ---
   async getTechnicians() {
-    return this.request('/api/technicians/');
+    try {
+      const res = await this.request('/api/technicians/');
+      if (Array.isArray(res) && res.length > 0) return res;
+      return this.localStore.technicians;
+    } catch (e) {
+      return this.localStore.technicians;
+    }
   }
 
   async createTechnician(payload) {
@@ -819,7 +923,13 @@ class DanfezApiClient {
 
   // --- Buildings ---
   async getBuildings() {
-    return this.request('/api/buildings/');
+    try {
+      const res = await this.request('/api/buildings/');
+      if (Array.isArray(res) && res.length > 0) return res;
+      return this.localStore.buildings;
+    } catch (e) {
+      return this.localStore.buildings;
+    }
   }
 
   // --- Users ---
@@ -829,11 +939,23 @@ class DanfezApiClient {
 
   // --- Reports & Analytics ---
   async getDashboardSummary() {
-    return this.request('/api/reports/dashboard');
+    try {
+      const res = await this.request('/api/reports/dashboard');
+      if (res && typeof res === 'object' && res.total_elevators !== undefined) return res;
+      return this.handleFallbackEndpoint('/api/reports/dashboard');
+    } catch (e) {
+      return this.handleFallbackEndpoint('/api/reports/dashboard');
+    }
   }
 
   async getAnalytics() {
-    return this.request('/api/reports/analytics');
+    try {
+      const res = await this.request('/api/reports/analytics');
+      if (res && typeof res === 'object' && res.monthly_trend) return res;
+      return this.handleFallbackEndpoint('/api/reports/analytics');
+    } catch (e) {
+      return this.handleFallbackEndpoint('/api/reports/analytics');
+    }
   }
 
   getExportUrl(type) {

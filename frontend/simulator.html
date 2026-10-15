@@ -376,19 +376,24 @@
 
     async function loadElevatorSelector() {
       try {
-        const elevators = await window.danfezApi.getElevators();
+        const res = await window.danfezApi.getElevators();
+        const elevators = Array.isArray(res) && res.length ? res : (window.danfezApi.localStore ? window.danfezApi.localStore.elevators : []);
         const sel = document.getElementById('elevator-selector');
-        sel.innerHTML = elevators.map(e => `
-          <option value="${e.id}" ${e.id === activeElevatorId ? 'selected' : ''}>
-            ${e.code} (${e.name})
-          </option>
-        `).join('');
+        if (sel && elevators.length) {
+          sel.innerHTML = elevators.map(e => `
+            <option value="${e.id}" ${e.id === activeElevatorId ? 'selected' : ''}>
+              ${e.code} (${e.name})
+            </option>
+          `).join('');
 
-        sel.addEventListener('change', () => {
-          activeElevatorId = parseInt(sel.value);
-          fetchSimulatorStatus();
-        });
-      } catch (e) {}
+          sel.addEventListener('change', () => {
+            activeElevatorId = parseInt(sel.value);
+            fetchSimulatorStatus();
+          });
+        }
+      } catch (e) {
+        console.warn('Elevator selector note:', e);
+      }
     }
 
     async function fetchSimulatorStatus() {
@@ -404,63 +409,81 @@
       if (!state) return;
       elevatorState = state;
       floorCount = state.floor_count || 10;
+      const status = (state.status || 'operational').toLowerCase();
+      const direction = (state.direction || 'idle').toLowerCase();
+      const doorState = (state.door_state || 'closed').toLowerCase();
+      const curFloor = state.current_floor || 1;
 
       // Update titles
-      document.getElementById('sim-shaft-title').textContent = `${state.elevator_code || 'LIFT'} — ${state.elevator_name || 'Main Lift'}`;
-      document.getElementById('sim-shaft-sub').textContent = `${state.building_name || 'Building'} &bull; Floors 1 – ${floorCount}`;
+      const shaftTitle = document.getElementById('sim-shaft-title');
+      if (shaftTitle) shaftTitle.textContent = `${state.elevator_code || state.code || 'LIFT-A01'} — ${state.elevator_name || state.name || 'Main Lift'}`;
+      const shaftSub = document.getElementById('sim-shaft-sub');
+      if (shaftSub) shaftSub.textContent = `${state.building_name || 'Tower 1 - Innovation Center'} • Floors 1 – ${floorCount}`;
       
       // Update status badge
       const badge = document.getElementById('sim-status-badge');
-      badge.textContent = state.status;
-      badge.className = `badge-status badge-${state.status}`;
+      if (badge) {
+        badge.textContent = status;
+        badge.className = `badge-status badge-${status}`;
+      }
 
       // Update moving indicator
       const movInd = document.getElementById('sim-moving-indicator');
-      movInd.textContent = state.direction.toUpperCase();
-      movInd.className = `badge ${state.direction === 'up' ? 'bg-primary' : (state.direction === 'down' ? 'bg-info' : 'bg-secondary')}`;
+      if (movInd) {
+        movInd.textContent = direction.toUpperCase();
+        movInd.className = `badge ${direction === 'up' ? 'bg-primary' : (direction === 'down' ? 'bg-info' : 'bg-secondary')}`;
+      }
 
       // Update Digital Readout
-      document.getElementById('digital-floor-readout').textContent = String(state.current_floor).padStart(2, '0');
-      document.getElementById('digital-status-text').textContent = `${state.status.toUpperCase()} • DOORS ${state.door_state.toUpperCase()}`;
-      document.getElementById('sim-door-text').textContent = state.door_state;
-      document.getElementById('sim-speed-text').textContent = `${state.speed_multiplier}x`;
+      const dFloor = document.getElementById('digital-floor-readout');
+      if (dFloor) dFloor.textContent = String(curFloor).padStart(2, '0');
+      const dStatus = document.getElementById('digital-status-text');
+      if (dStatus) dStatus.textContent = `${status.toUpperCase()} • DOORS ${doorState.toUpperCase()}`;
+      const simDoor = document.getElementById('sim-door-text');
+      if (simDoor) simDoor.textContent = doorState;
+      const simSpeed = document.getElementById('sim-speed-text');
+      if (simSpeed) simSpeed.textContent = `${state.speed_multiplier || 1.0}x`;
 
       // Direction Arrows
       const upArrow = document.getElementById('arrow-up');
       const downArrow = document.getElementById('arrow-down');
-      if (state.direction === 'up') {
-        upArrow.className = 'bi bi-caret-up-fill digital-arrow active';
-        downArrow.className = 'bi bi-caret-down-fill digital-arrow inactive';
-      } else if (state.direction === 'down') {
-        upArrow.className = 'bi bi-caret-up-fill digital-arrow inactive';
-        downArrow.className = 'bi bi-caret-down-fill digital-arrow active';
-      } else {
-        upArrow.className = 'bi bi-caret-up-fill digital-arrow inactive';
-        downArrow.className = 'bi bi-caret-down-fill digital-arrow inactive';
+      if (upArrow && downArrow) {
+        if (direction === 'up') {
+          upArrow.className = 'bi bi-caret-up-fill digital-arrow active';
+          downArrow.className = 'bi bi-caret-down-fill digital-arrow inactive';
+        } else if (direction === 'down') {
+          upArrow.className = 'bi bi-caret-up-fill digital-arrow inactive';
+          downArrow.className = 'bi bi-caret-down-fill digital-arrow active';
+        } else {
+          upArrow.className = 'bi bi-caret-up-fill digital-arrow inactive';
+          downArrow.className = 'bi bi-caret-down-fill digital-arrow inactive';
+        }
       }
 
       // Check arrival chime
-      if (state.current_floor !== prevFloor) {
-        if (state.door_state === 'opening' || state.door_state === 'open') {
-          window.danfezAudio.playArrivalChime();
+      if (curFloor !== prevFloor) {
+        if (doorState === 'opening' || doorState === 'open') {
+          if (window.danfezAudio) {
+            try { window.danfezAudio.playArrivalChime(); } catch (e) {}
+          }
         }
-        prevFloor = state.current_floor;
+        prevFloor = curFloor;
       }
 
       // Render Shaft Levels Axis if not built
-      renderShaftAxis(floorCount, state.current_floor);
+      renderShaftAxis(floorCount, curFloor);
 
       // Position Elevator Car smoothly
-      positionElevatorCar(state.current_floor, floorCount, state.door_state);
+      positionElevatorCar(curFloor, floorCount, doorState);
 
       // Render Floor Buttons Keypad
-      renderKeypad(floorCount, state.request_queue, state.current_floor);
+      renderKeypad(floorCount, state.request_queue || [], curFloor);
 
       // Render Queue Tags
-      renderQueue(state.request_queue, state.target_floor);
+      renderQueue(state.request_queue || [], state.target_floor);
 
       // Render Terminal Events
-      renderEvents(state.events);
+      renderEvents(state.events || []);
     }
 
     function renderShaftAxis(totalFloors, currentFloor) {
@@ -590,6 +613,20 @@
       const actionLower = (action || '').toLowerCase();
       const isOpen = (actionLower === 'open' || actionLower === 'opening');
       
+      if (!elevatorState) {
+        elevatorState = {
+          current_floor: 1,
+          floor_count: 10,
+          status: 'operational',
+          direction: 'idle',
+          door_state: isOpen ? 'open' : 'closed',
+          speed_multiplier: 1.0,
+          request_queue: [],
+          events: []
+        };
+      }
+      elevatorState.door_state = isOpen ? 'open' : 'closed';
+
       const container = document.getElementById('door-container');
       if (container) {
         container.className = isOpen ? 'door-container doors-open' : 'door-container';
@@ -602,6 +639,10 @@
       if (digiText) {
         const curStatus = (elevatorState && elevatorState.status) ? elevatorState.status.toUpperCase() : 'OPERATIONAL';
         digiText.textContent = `${curStatus} • DOORS ${isOpen ? 'OPEN' : 'CLOSED'}`;
+      }
+
+      if (isOpen && window.danfezAudio) {
+        try { window.danfezAudio.playArrivalChime(); } catch (e) {}
       }
 
       try {

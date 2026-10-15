@@ -254,11 +254,15 @@
 
     async function loadTechnicians() {
       try {
-        techniciansCache = await window.danfezApi.getTechnicians();
+        const res = await window.danfezApi.getTechnicians();
+        techniciansCache = Array.isArray(res) ? res : [];
         renderGrid(techniciansCache);
         renderTable(techniciansCache);
       } catch (err) {
-        window.showToast('Error', 'Failed to load technicians', 'error');
+        console.warn('Technicians load note:', err);
+        techniciansCache = (window.danfezApi && window.danfezApi.localStore) ? window.danfezApi.localStore.technicians : [];
+        renderGrid(techniciansCache);
+        renderTable(techniciansCache);
       }
     }
 

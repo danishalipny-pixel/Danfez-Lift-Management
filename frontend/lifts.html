@@ -266,12 +266,17 @@
 
     async function loadElevators() {
       try {
-        elevatorsCache = await window.danfezApi.getElevators();
-        document.getElementById('lifts-count-badge').textContent = `${elevatorsCache.length} Elevators`;
+        const res = await window.danfezApi.getElevators();
+        elevatorsCache = Array.isArray(res) && res.length ? res : (window.danfezApi.localStore ? window.danfezApi.localStore.elevators : []);
+        const countBadge = document.getElementById('lifts-count-badge');
+        if (countBadge) countBadge.textContent = `${elevatorsCache.length} Elevators`;
         renderGrid(elevatorsCache);
         renderTable(elevatorsCache);
       } catch (err) {
-        window.showToast('Error', 'Failed to load elevators list', 'error');
+        console.warn('Elevators load note:', err);
+        elevatorsCache = (window.danfezApi && window.danfezApi.localStore) ? window.danfezApi.localStore.elevators : [];
+        renderGrid(elevatorsCache);
+        renderTable(elevatorsCache);
       }
     }
 

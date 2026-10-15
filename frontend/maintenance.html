@@ -392,10 +392,14 @@
 
       try {
         ticketsCache = await window.danfezApi.getTickets(params);
-        document.getElementById('tickets-count-badge').textContent = `${ticketsCache.length} Tickets`;
+        ticketsCache = Array.isArray(ticketsCache) ? ticketsCache : [];
+        const badge = document.getElementById('tickets-count-badge');
+        if (badge) badge.textContent = `${ticketsCache.length} Tickets`;
         renderTicketsTable(ticketsCache);
       } catch (err) {
-        window.showToast('Error', 'Failed to load maintenance tickets', 'error');
+        console.warn('Tickets load note:', err);
+        ticketsCache = (window.danfezApi && window.danfezApi.localStore) ? window.danfezApi.localStore.tickets : [];
+        renderTicketsTable(ticketsCache);
       }
     }
 

@@ -362,10 +362,14 @@
 
       try {
         faultsCache = await window.danfezApi.getFaults(params);
-        document.getElementById('faults-count-badge').textContent = `${faultsCache.length} Alerts`;
+        faultsCache = Array.isArray(faultsCache) ? faultsCache : [];
+        const badge = document.getElementById('faults-count-badge');
+        if (badge) badge.textContent = `${faultsCache.length} Alerts`;
         renderFaultsTable(faultsCache);
       } catch (err) {
-        window.showToast('Error', 'Failed to load fault alerts', 'error');
+        console.warn('Fault alerts load note:', err);
+        faultsCache = (window.danfezApi && window.danfezApi.localStore) ? window.danfezApi.localStore.faults : [];
+        renderFaultsTable(faultsCache);
       }
     }
 

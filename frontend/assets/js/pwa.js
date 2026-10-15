@@ -7,7 +7,7 @@ let deferredPrompt = null;
 // Register & Update Service Worker immediately
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js?v=2.0.2')
+    navigator.serviceWorker.register('/service-worker.js?v=2.0.3')
       .then((reg) => {
         reg.update();
         console.log('[Danfez PWA] Service Worker registered and checked for updates:', reg.scope);
@@ -22,7 +22,7 @@ if ('serviceWorker' in navigator) {
 if ('caches' in window) {
   caches.keys().then((names) => {
     names.forEach((name) => {
-      if (name.includes('v2.0.0') || name.includes('v2.0.1')) {
+      if (name !== 'danfez-lift-v2.0.3') {
         console.log('[Danfez PWA] Removing outdated cache:', name);
         caches.delete(name);
       }
