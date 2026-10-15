@@ -396,19 +396,19 @@ class DanfezApiClient {
 
     // 5. Simulator call floor
     if (endpoint.includes('/call') && method === 'POST') {
-      const body = JSON.parse(options.body || '{}');
+      const body = typeof options.body === 'string' ? JSON.parse(options.body || '{}') : (options.body || {});
       const target = body.floor || 1;
       const el = this.localStore.elevators[0];
       el.target_floor = target;
       if (target > el.current_floor) {
         el.status = 'MOVING_UP';
-        el.door_state = 'CLOSED';
+        el.door_state = 'closed';
       } else if (target < el.current_floor) {
         el.status = 'MOVING_DOWN';
-        el.door_state = 'CLOSED';
+        el.door_state = 'closed';
       } else {
-        el.door_state = 'OPEN';
-        el.status = 'IDLE';
+        el.door_state = 'open';
+        el.status = 'idle';
       }
       this.localStore.events.unshift({
         timestamp: new Date().toLocaleTimeString(),
@@ -420,9 +420,14 @@ class DanfezApiClient {
 
     // 6. Simulator door action
     if (endpoint.includes('/door') && method === 'POST') {
-      const body = JSON.parse(options.body || '{}');
+      const body = typeof options.body === 'string' ? JSON.parse(options.body || '{}') : (options.body || {});
+      const action = (body.action || 'open').toLowerCase();
       const el = this.localStore.elevators[0];
-      el.door_state = body.action === 'OPEN' ? 'OPEN' : 'CLOSED';
+      el.door_state = (action === 'open' || action === 'opening') ? 'open' : 'closed';
+      this.localStore.events.unshift({
+        timestamp: new Date().toLocaleTimeString(),
+        text: `Cabin door ${el.door_state} commanded.`
+      });
       this.broadcastLocalState();
       return { success: true, door_state: el.door_state };
     }
@@ -440,10 +445,10 @@ class DanfezApiClient {
     if (endpoint.includes('/reset') && method === 'POST') {
       const el = this.localStore.elevators[0];
       el.is_emergency_stopped = false;
-      el.status = 'IDLE';
-      el.door_state = 'CLOSED';
+      el.status = 'idle';
+      el.door_state = 'closed';
       this.broadcastLocalState();
-      return { success: true, is_emergency_stopped: false, status: 'IDLE' };
+      return { success: true, is_emergency_stopped: false, status: 'idle' };
     }
 
     // 9. Simulator events

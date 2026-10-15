@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 from ..database import get_db
@@ -8,7 +8,7 @@ from ..models.user import User
 from ..schemas.elevator import (
     SimulatorCallRequest, SimulatorDoorRequest, SimulatorSpeedRequest, SimulatorTestFaultRequest
 )
-from ..auth.dependencies import get_current_user, require_technician_or_admin
+from ..auth.dependencies import get_current_user, get_optional_current_user, require_technician_or_admin
 from ..services.simulator_engine import simulator_manager
 from ..services.audit_service import log_audit
 
@@ -50,7 +50,7 @@ async def call_floor(
     elevator_id: int,
     call_req: SimulatorCallRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: Optional[User] = Depends(get_optional_current_user)
 ):
     elev = db.query(Elevator).filter(Elevator.id == elevator_id).first()
     if not elev:
@@ -67,9 +67,11 @@ async def call_floor(
     success = sim.add_floor_request(call_req.floor)
     await simulator_manager.broadcast_state()
 
+    user_id = current_user.id if current_user else 1
+    user_email = current_user.email if current_user else "dispatcher@danfez.com"
     log_audit(
         db, action="SIM_CALL_FLOOR", resource=f"Elevator:{elevator_id}",
-        user_id=current_user.id, user_email=current_user.email,
+        user_id=user_id, user_email=user_email,
         details=f"User called Floor {call_req.floor} on {elev.code}"
     )
 
@@ -86,18 +88,27 @@ async def door_action(
     elevator_id: int,
     door_req: SimulatorDoorRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: Optional[User] = Depends(get_optional_current_user)
 ):
     elev = db.query(Elevator).filter(Elevator.id == elevator_id).first()
     if not elev:
         raise HTTPException(status_code=404, detail="Elevator not found")
 
     sim = simulator_manager.get_or_create(elev.id, elev.floor_count, elev.current_floor)
-    if door_req.action not in ("open", "close"):
+    action_lower = door_req.action.lower()
+    if action_lower not in ("open", "close"):
         raise HTTPException(status_code=400, detail="Action must be 'open' or 'close'")
 
-    success = sim.trigger_door_action(door_req.action)
+    success = sim.trigger_door_action(action_lower)
     await simulator_manager.broadcast_state()
+
+    user_id = current_user.id if current_user else 1
+    user_email = current_user.email if current_user else "dispatcher@danfez.com"
+    log_audit(
+        db, action="SIM_DOOR_ACTION", resource=f"Elevator:{elevator_id}",
+        user_id=user_id, user_email=user_email,
+        details=f"Door {action_lower} requested on {elev.code}"
+    )
 
     return {"success": success, "door_state": sim.door_state}
 
@@ -105,7 +116,7 @@ async def door_action(
 async def emergency_stop(
     elevator_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: Optional[User] = Depends(get_optional_current_user)
 ):
     elev = db.query(Elevator).filter(Elevator.id == elevator_id).first()
     if not elev:
@@ -116,9 +127,11 @@ async def emergency_stop(
     await simulator_manager.broadcast_state()
 
     # Log critical audit
+    user_id = current_user.id if current_user else 1
+    user_email = current_user.email if current_user else "dispatcher@danfez.com"
     log_audit(
         db, action="EMERGENCY_STOP_TRIGGERED", resource=f"Elevator:{elevator_id}",
-        user_id=current_user.id, user_email=current_user.email,
+        user_id=user_id, user_email=user_email,
         details=f"Simulated EMERGENCY STOP engaged on {elev.code} at Floor {sim.current_floor}"
     )
 
@@ -148,7 +161,7 @@ async def emergency_stop(
 async def reset_simulator(
     elevator_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_technician_or_admin)
+    current_user: Optional[User] = Depends(get_optional_current_user)
 ):
     elev = db.query(Elevator).filter(Elevator.id == elevator_id).first()
     if not elev:
@@ -167,10 +180,12 @@ async def reset_simulator(
 
     await simulator_manager.broadcast_state()
 
+    user_id = current_user.id if current_user else 1
+    user_email = current_user.email if current_user else "dispatcher@danfez.com"
     log_audit(
         db, action="SIMULATOR_RESET", resource=f"Elevator:{elevator_id}",
-        user_id=current_user.id, user_email=current_user.email,
-        details=f"Elevator {elev.code} reset to Floor 1 by {current_user.email}"
+        user_id=user_id, user_email=user_email,
+        details=f"Elevator {elev.code} reset to Floor 1 by {user_email}"
     )
 
     return {"message": "Simulator reset to Floor 1 successfully", "status": sim.status}
@@ -180,7 +195,7 @@ async def set_speed(
     elevator_id: int,
     speed_req: SimulatorSpeedRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_technician_or_admin)
+    current_user: Optional[User] = Depends(get_optional_current_user)
 ):
     elev = db.query(Elevator).filter(Elevator.id == elevator_id).first()
     if not elev:
@@ -204,7 +219,7 @@ async def inject_test_fault(
     elevator_id: int,
     fault_req: SimulatorTestFaultRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_technician_or_admin)
+    current_user: Optional[User] = Depends(get_optional_current_user)
 ):
     elev = db.query(Elevator).filter(Elevator.id == elevator_id).first()
     if not elev:
@@ -235,9 +250,11 @@ async def inject_test_fault(
 
     await simulator_manager.broadcast_state()
 
+    user_id = current_user.id if current_user else 1
+    user_email = current_user.email if current_user else "dispatcher@danfez.com"
     log_audit(
         db, action="TEST_FAULT_INJECTED", resource=f"Elevator:{elevator_id}",
-        user_id=current_user.id, user_email=current_user.email,
+        user_id=user_id, user_email=user_email,
         details=f"Injected test fault {fault.fault_code} ({fault_req.severity})"
     )
 

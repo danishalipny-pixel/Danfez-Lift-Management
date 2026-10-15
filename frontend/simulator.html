@@ -587,10 +587,19 @@
 
     async function handleDoorAction(action) {
       window.danfezAudio.playButtonBeep();
+      const container = document.getElementById('door-container');
+      const actionLower = (action || '').toLowerCase();
+      if (container) {
+        if (actionLower === 'open') {
+          container.className = 'door-container doors-open';
+        } else {
+          container.className = 'door-container';
+        }
+      }
       try {
-        await window.danfezApi.doorAction(activeElevatorId, action);
+        await window.danfezApi.doorAction(activeElevatorId, actionLower);
       } catch (err) {
-        window.showToast('Door Action Error', err.message, 'warning');
+        console.warn('Door action local sync:', err);
       }
     }
 

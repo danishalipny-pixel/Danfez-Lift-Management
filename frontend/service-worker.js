@@ -1,4 +1,4 @@
-const CACHE_NAME = 'danfez-lift-v2.0.0';
+const CACHE_NAME = 'danfez-lift-v2.0.1';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -58,23 +58,8 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // NEVER cache API requests or WebSocket connections (security requirement)
+  // NEVER cache API requests or WebSocket connections (pass through to native network)
   if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/ws')) {
-    event.respondWith(
-      fetch(event.request).catch(() => {
-        return new Response(
-          JSON.stringify({
-            error: 'Network connectivity unavailable',
-            offline: true,
-            detail: 'Live elevator monitoring and actions require an active network connection.'
-          }),
-          {
-            status: 503,
-            headers: { 'Content-Type': 'application/json' }
-          }
-        );
-      })
-    );
     return;
   }
 
