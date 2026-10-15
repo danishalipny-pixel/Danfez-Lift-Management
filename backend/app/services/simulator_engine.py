@@ -105,6 +105,9 @@ class ElevatorSimulator:
                 self.door_timer = 2
                 self.add_event("DOOR", f"Manual door close requested at Floor {self.current_floor}")
                 return True
+            else:
+                self.door_state = "closed"
+                return True
         return False
 
     def trigger_emergency_stop(self):
