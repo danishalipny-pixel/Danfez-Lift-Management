@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Danfez Lift Control</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="assets/icons/danfez-logo.svg">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="assets/css/danfez-theme.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="app-wrapper">
+    <!-- Desktop Sidebar -->
+    <aside class="danfez-sidebar">
+      <div class="sidebar-brand">
+        <a href="dashboard.html" class="d-flex align-items-center text-decoration-none">
+          <div class="d-inline-flex p-2 rounded-3 bg-navy-secondary border border-secondary border-opacity-25 me-2">
+            <i class="bi bi-building-up fs-5 text-danfez-cyan"></i>
+          </div>
+          <div>
+            <div class="fw-bold text-white small" style="letter-spacing: 1px;">DANFEZ TECH</div>
+            <div class="text-danfez-blue" style="font-size: 0.72rem; font-weight: 600;">LIFT CONTROL</div>
+          </div>
+        </a>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-category">Main Operations</div>
+        <a href="dashboard.html" class="nav-link active"><i class="bi bi-speedometer2"></i> Dashboard</a>
+        <a href="lifts.html" class="nav-link"><i class="bi bi-building"></i> Lift Monitoring</a>
+        <a href="simulator.html" class="nav-link"><i class="bi bi-play-circle"></i> Floor Simulator</a>
+
+        <div class="nav-category">Fleet & Service</div>
+        <a href="maintenance.html" class="nav-link"><i class="bi bi-tools"></i> Maintenance</a>
+        <a href="alerts.html" class="nav-link"><i class="bi bi-shield-exclamation"></i> Fault & Alert Center</a>
+        <a href="technicians.html" class="nav-link"><i class="bi bi-person-badge"></i> Technicians</a>
+        <a href="reports.html" class="nav-link"><i class="bi bi-graph-up-arrow"></i> Reports & Analytics</a>
+
+        <div class="nav-category admin-only">Administration</div>
+        <a href="users.html" class="nav-link admin-only"><i class="bi bi-people"></i> User Management</a>
+        <a href="settings.html" class="nav-link admin-only"><i class="bi bi-gear"></i> Settings & Audit</a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center overflow-hidden">
+            <div class="rounded-circle bg-primary bg-opacity-25 text-danfez-cyan p-2 me-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+              <i class="bi bi-person-fill"></i>
+            </div>
+            <div class="overflow-hidden">
+              <div id="user-display-name" class="text-white text-truncate small fw-semibold">Admin User</div>
+              <span id="user-display-role" class="badge bg-primary bg-opacity-25 text-danfez-cyan px-2 py-0" style="font-size: 0.65rem;">ADMIN</span>
+            </div>
+          </div>
+          <button class="btn btn-link text-white-50 p-1" onclick="window.DanfezAuth.logout()" title="Logout">
+            <i class="bi bi-box-arrow-right fs-5"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="danfez-main">
+      <!-- Topbar Header -->
+      <header class="danfez-topbar">
+        <div class="d-flex align-items-center">
+          <button id="sidebar-toggle-btn" class="btn btn-light d-lg-none me-2" aria-label="Toggle navigation">
+            <i class="bi bi-list fs-5"></i>
+          </button>
+          <div>
+            <h5 class="fw-bold text-navy mb-0">System Overview</h5>
+            <small class="text-secondary d-none d-sm-inline">Danfez HQ Tower &bull; Lift Control Central</small>
+          </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+          <!-- Live Telemetry Status Badge -->
+          <div class="live-badge online">
+            <span class="pulse-dot"></span> <span class="d-none d-md-inline">LIVE /</span> SIMULATION
+          </div>
+
+          <!-- PWA Install Button -->
+          <button id="pwa-install-btn" class="btn btn-outline-primary btn-sm rounded-pill d-none">
+            <i class="bi bi-download me-1"></i> Install App
+          </button>
+
+          <!-- Audio Chime Toggle -->
+          <button id="audio-toggle-btn" class="btn btn-light rounded-circle" title="Toggle elevator chime sounds" style="width: 38px; height: 38px;">
+            <i class="bi bi-volume-up" id="audio-icon"></i>
+          </button>
+
+          <!-- Notification Bell -->
+          <a href="alerts.html" class="btn btn-light position-relative rounded-circle" style="width: 38px; height: 38px;">
+            <i class="bi bi-bell"></i>
+            <span id="topbar-alert-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none">0</span>
+          </a>
+
+          <!-- Profile Link -->
+          <a href="profile.html" class="btn btn-light rounded-circle" title="User Profile" style="width: 38px; height: 38px;">
+            <i class="bi bi-person"></i>
+          </a>
+        </div>
+      </header>
+
+      <!-- Dashboard Content -->
+      <div class="page-content">
+        <!-- Safety Banner -->
+        <div class="alert alert-secondary border-0 rounded-4 py-2 px-3 mb-4 d-flex flex-column flex-sm-row align-items-sm-center justify-content-between bg-white shadow-sm gap-2">
+          <div class="d-flex align-items-center">
+            <i class="bi bi-shield-exclamation text-warning fs-4 me-3 flex-shrink-0"></i>
+            <div class="small">
+              <strong>SIMULATION / DEMO ENVIRONMENT:</strong> Operating in safe simulated telemetry mode for Danfez HQ. Physical elevator control circuits remain under certified local hardware controllers.
+            </div>
+          </div>
+          <a href="simulator.html" class="btn btn-primary btn-sm rounded-pill text-nowrap align-self-start align-self-sm-center">
+            Open Simulator <i class="bi bi-arrow-right ms-1"></i>
+          </a>
+        </div>
+
+        <!-- Metric KPI Cards -->
+        <div class="row g-3 mb-4">
+          <!-- Total Elevators -->
+          <div class="col-6 col-md-4 col-xl-2">
+            <div class="card stat-card h-100 p-3 card-hover border-start border-4 border-primary">
+              <div class="text-secondary small fw-semibold text-truncate">Total Elevators</div>
+              <div class="d-flex align-items-baseline justify-content-between mt-2">
+                <h3 class="fw-bold text-navy mb-0" id="stat-total-elevators">
+                  <span class="spinner-border spinner-border-sm text-primary" role="status"></span>
+                </h3>
+                <i class="bi bi-building text-primary fs-4 opacity-50"></i>
+              </div>
+              <small class="text-muted mt-2 text-truncate d-block" id="stat-buildings-count">Loading...</small>
+            </div>
+          </div>
+
+          <!-- Operational -->
+          <div class="col-6 col-md-4 col-xl-2">
+            <div class="card stat-card h-100 p-3 card-hover border-start border-4 border-success">
+              <div class="text-secondary small fw-semibold text-truncate">Operational</div>
+              <div class="d-flex align-items-baseline justify-content-between mt-2">
+                <h3 class="fw-bold text-success mb-0" id="stat-operational">
+                  <span class="spinner-border spinner-border-sm text-success" role="status"></span>
+                </h3>
+                <i class="bi bi-check-circle text-success fs-4 opacity-50"></i>
+              </div>
+              <small class="text-muted mt-2 text-truncate d-block">Active service</small>
+            </div>
+          </div>
+
+          <!-- Under Maintenance -->
+          <div class="col-6 col-md-4 col-xl-2">
+            <div class="card stat-card h-100 p-3 card-hover border-start border-4 border-warning">
+              <div class="text-secondary small fw-semibold text-truncate">Maintenance</div>
+              <div class="d-flex align-items-baseline justify-content-between mt-2">
+                <h3 class="fw-bold text-warning mb-0" id="stat-maintenance">
+                  <span class="spinner-border spinner-border-sm text-warning" role="status"></span>
+                </h3>
+                <i class="bi bi-tools text-warning fs-4 opacity-50"></i>
+              </div>
+              <small class="text-muted mt-2 text-truncate d-block">Technician on site</small>
+            </div>
+          </div>
+
+          <!-- Active Faults -->
+          <div class="col-6 col-md-4 col-xl-2">
+            <div class="card stat-card h-100 p-3 card-hover border-start border-4 border-danger">
+              <div class="text-secondary small fw-semibold text-truncate">Active Faults</div>
+              <div class="d-flex align-items-baseline justify-content-between mt-2">
+                <h3 class="fw-bold text-danger mb-0" id="stat-faults">
+                  <span class="spinner-border spinner-border-sm text-danger" role="status"></span>
+                </h3>
+                <i class="bi bi-exclamation-octagon text-danger fs-4 opacity-50"></i>
+              </div>
+              <small class="text-muted mt-2 text-truncate d-block">Unresolved alerts</small>
+            </div>
+          </div>
+
+          <!-- Open Tickets -->
+          <div class="col-6 col-md-4 col-xl-2">
+            <div class="card stat-card h-100 p-3 card-hover border-start border-4 border-info">
+              <div class="text-secondary small fw-semibold text-truncate">Open Tasks</div>
+              <div class="d-flex align-items-baseline justify-content-between mt-2">
+                <h3 class="fw-bold text-navy mb-0" id="stat-open-tickets">
+                  <span class="spinner-border spinner-border-sm text-info" role="status"></span>
+                </h3>
+                <i class="bi bi-journal-check text-info fs-4 opacity-50"></i>
+              </div>
+              <small class="text-muted mt-2 text-truncate d-block">Pending completion</small>
+            </div>
+          </div>
+
+          <!-- Availability Rate -->
+          <div class="col-6 col-md-4 col-xl-2">
+            <div class="card stat-card h-100 p-3 card-hover border-start border-4 border-secondary">
+              <div class="text-secondary small fw-semibold text-truncate">Availability</div>
+              <div class="d-flex align-items-baseline justify-content-between mt-2">
+                <h3 class="fw-bold text-navy mb-0" id="stat-availability">
+                  <span class="spinner-border spinner-border-sm text-secondary" role="status"></span>
+                </h3>
+                <i class="bi bi-pie-chart text-secondary fs-4 opacity-50"></i>
+              </div>
+              <small class="text-muted mt-2 text-truncate d-block">Fleet uptime</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Elevators Real-Time Telemetry Grid -->
+        <div class="row g-3 mb-4">
+          <div class="col-12">
+            <div class="card p-4">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                  <h5 class="fw-bold text-navy mb-0">Live Elevators Status</h5>
+                  <small class="text-secondary">Real-time floor positions, direction, and door states</small>
+                </div>
+                <a href="lifts.html" class="btn btn-outline-primary btn-sm rounded-pill">View All Lifts</a>
+              </div>
+
+              <div class="row g-3" id="elevators-cards-container">
+                <div class="col-12 text-center py-4 text-muted">
+                  <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div> Loading live elevators telemetry...
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Two Column Section: Upcoming Maintenance & Fault Severity Summary -->
+        <div class="row g-3 mb-4">
+          <!-- Upcoming Maintenance Schedule -->
+          <div class="col-lg-7">
+            <div class="card p-4 h-100">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                  <h6 class="fw-bold text-navy mb-0">Upcoming Maintenance Tasks</h6>
+                  <small class="text-secondary">Scheduled preventive service & inspections</small>
+                </div>
+                <a href="maintenance.html" class="btn btn-link btn-sm text-decoration-none">Manage Tickets</a>
+              </div>
+
+              <div class="table-responsive">
+                <table class="table table-hover align-middle small mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Ticket</th>
+                      <th>Lift</th>
+                      <th>Category</th>
+                      <th>Priority</th>
+                      <th>Scheduled</th>
+                      <th>Technician</th>
+                    </tr>
+                  </thead>
+                  <tbody id="maintenance-schedule-table">
+                    <tr><td colspan="6" class="text-center py-3 text-muted">Loading schedule...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Fault Severity Breakdown & Availability Chart -->
+          <div class="col-lg-5">
+            <div class="card p-4 h-100">
+              <h6 class="fw-bold text-navy mb-1">Active Faults Breakdown</h6>
+              <small class="text-secondary mb-3">Severity distribution across facilities</small>
+              
+              <div class="row g-2 mb-3">
+                <div class="col-6">
+                  <div class="p-2 rounded-3 bg-danger bg-opacity-10 border border-danger border-opacity-25 text-center">
+                    <small class="text-danger fw-semibold d-block">Critical</small>
+                    <span class="fs-4 fw-bold text-danger" id="count-critical">0</span>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="p-2 rounded-3 bg-warning bg-opacity-10 border border-warning border-opacity-25 text-center">
+                    <small class="text-warning-danfez fw-semibold d-block">High</small>
+                    <span class="fs-4 fw-bold text-warning-danfez" id="count-high">0</span>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="p-2 rounded-3 bg-primary bg-opacity-10 border border-primary border-opacity-25 text-center">
+                    <small class="text-primary fw-semibold d-block">Medium</small>
+                    <span class="fs-4 fw-bold text-primary" id="count-medium">0</span>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="p-2 rounded-3 bg-secondary bg-opacity-10 border border-secondary border-opacity-25 text-center">
+                    <small class="text-secondary fw-semibold d-block">Low</small>
+                    <span class="fs-4 fw-bold text-secondary" id="count-low">0</span>
+                  </div>
+                </div>
+              </div>
+
+              <div style="height: 140px;">
+                <canvas id="availabilityDoughnut"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent System Activity Audit Timeline -->
+        <div class="row g-3">
+          <div class="col-12">
+            <div class="card p-4">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                  <h6 class="fw-bold text-navy mb-0">Recent Activity & Audit Trail</h6>
+                  <small class="text-secondary">Logged dispatcher actions, floor stops, and status changes</small>
+                </div>
+                <a href="settings.html" class="btn btn-link btn-sm text-decoration-none admin-only">Full Audit Logs</a>
+              </div>
+
+              <div class="table-responsive">
+                <table class="table table-hover align-middle small mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Time</th>
+                      <th>Action</th>
+                      <th>Target Resource</th>
+                      <th>User</th>
+                      <th>Details</th>
+                    </tr>
+                  </thead>
+                  <tbody id="activity-log-table">
+                    <tr><td colspan="5" class="text-center py-3 text-muted">Loading activity trail...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Mobile Bottom Navigation -->
+  <nav class="mobile-bottom-nav">
+    <a href="dashboard.html" class="mobile-nav-item active" data-page="dashboard">
+      <i class="bi bi-speedometer2"></i>
+      <span>Dashboard</span>
+    </a>
+    <a href="lifts.html" class="mobile-nav-item" data-page="lifts">
+      <i class="bi bi-building"></i>
+      <span>Lifts</span>
+    </a>
+    <a href="simulator.html" class="mobile-nav-item" data-page="simulator">
+      <i class="bi bi-play-circle"></i>
+      <span>Simulator</span>
+    </a>
+    <a href="alerts.html" class="mobile-nav-item" data-page="alerts">
+      <i class="bi bi-shield-exclamation"></i>
+      <span>Alerts</span>
+    </a>
+    <a href="#" class="mobile-nav-item" id="mobile-menu-btn" onclick="document.querySelector('.danfez-sidebar').classList.toggle('show'); return false;">
+      <i class="bi bi-grid"></i>
+      <span>More</span>
+    </a>
+  </nav>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script src="assets/js/pwa.js"></script>
+
+  <script>
+    let doughnutChart = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!window.DanfezAuth.requireAuth()) return;
+      window.renderAppShell('dashboard');
+
+      // Setup audio toggle
+      const audioBtn = document.getElementById('audio-toggle-btn');
+      const audioIcon = document.getElementById('audio-icon');
+      if (audioBtn) {
+        audioIcon.className = window.danfezAudio.soundEnabled ? 'bi bi-volume-up' : 'bi bi-volume-mute';
+        audioBtn.addEventListener('click', () => {
+          const newState = !window.danfezAudio.soundEnabled;
+          window.danfezAudio.toggleSound(newState);
+          audioIcon.className = newState ? 'bi bi-volume-up' : 'bi bi-volume-mute';
+          window.showToast('Audio Settings', newState ? 'Elevator arrival chime enabled.' : 'Chime muted.', 'info');
+        });
+      }
+
+      await loadDashboardData();
+
+      // Connect WebSocket for live updates
+      window.danfezApi.connectSimulatorWebSocket((msg) => {
+        if (msg.type === 'SIMULATOR_UPDATE' || msg.type === 'INIT_STATE') {
+          updateLiveElevatorCards(msg.elevators);
+        }
+      });
+
+      // Poll summary every 8 seconds to update tickets and activity
+      setInterval(loadDashboardData, 8000);
+    });
+
+    async function loadDashboardData() {
+      try {
+        const data = await window.danfezApi.getDashboardSummary();
+        if (!data) return;
+        
+        // Extract metrics with safe defaults (0 instead of -)
+        const total = data.total_elevators ?? 0;
+        const buildings = data.total_buildings ?? 0;
+        const operational = data.elevators_operational ?? 0;
+        const maintenance = data.elevators_under_maintenance ?? 0;
+        const faults = data.active_faults ?? 0;
+        const openTasks = data.open_maintenance_tasks ?? 0;
+
+        // Calculate availability rate safely
+        let availability = data.availability_rate;
+        if (availability === undefined || availability === null || isNaN(availability)) {
+          availability = total > 0 ? Math.round((operational / total) * 1000) / 10 : 0;
+        }
+
+        document.getElementById('stat-total-elevators').textContent = total;
+        document.getElementById('stat-buildings-count').textContent = `${buildings} ${buildings === 1 ? 'Building' : 'Buildings'}`;
+        document.getElementById('stat-operational').textContent = operational;
+        document.getElementById('stat-maintenance').textContent = maintenance;
+        document.getElementById('stat-faults').textContent = faults;
+        document.getElementById('stat-open-tickets').textContent = openTasks;
+        document.getElementById('stat-availability').textContent = `${availability}%`;
+
+        // Update fault severities safely
+        const severities = data.fault_severities || {};
+        document.getElementById('count-critical').textContent = severities.Critical ?? 0;
+        document.getElementById('count-high').textContent = severities.High ?? 0;
+        document.getElementById('count-medium').textContent = severities.Medium ?? 0;
+        document.getElementById('count-low').textContent = severities.Low ?? 0;
+
+        // Render elevators cards
+        renderElevatorsCards(data.elevators || []);
+
+        // Render maintenance schedule safely
+        renderMaintenanceSchedule(data.upcoming_schedule || []);
+
+        // Render activity table safely
+        renderActivityTable(data.recent_activity || []);
+
+        // Render Doughnut Chart safely
+        renderDoughnutChart(operational, maintenance, faults);
+      } catch (err) {
+        console.warn('Failed to load dashboard data:', err);
+        // Fallback display if error occurs
+        const totalEl = document.getElementById('stat-total-elevators');
+        if (totalEl && totalEl.querySelector('.spinner-border')) {
+          totalEl.textContent = '0';
+          document.getElementById('stat-buildings-count').textContent = '0 Buildings';
+          document.getElementById('stat-operational').textContent = '0';
+          document.getElementById('stat-maintenance').textContent = '0';
+          document.getElementById('stat-faults').textContent = '0';
+          document.getElementById('stat-open-tickets').textContent = '0';
+          document.getElementById('stat-availability').textContent = '0%';
+        }
+      }
+    }
+
+    function renderElevatorsCards(elevators) {
+      const container = document.getElementById('elevators-cards-container');
+      if (!elevators || elevators.length === 0) {
+        container.innerHTML = '<div class="col-12 text-center text-muted py-3">No elevators registered.</div>';
+        return;
+      }
+
+      container.innerHTML = elevators.map(e => {
+        let badgeClass = 'badge-operational';
+        if (e.status === 'moving') badgeClass = 'badge-moving';
+        if (e.status === 'maintenance') badgeClass = 'badge-maintenance';
+        if (e.status === 'fault') badgeClass = 'badge-fault';
+        if (e.status === 'idle') badgeClass = 'badge-idle';
+
+        let dirIcon = 'bi-dash text-muted';
+        if (e.direction === 'up') dirIcon = 'bi-arrow-up-circle-fill text-primary';
+        if (e.direction === 'down') dirIcon = 'bi-arrow-down-circle-fill text-info';
+
+        return `
+          <div class="col-md-6 col-xl-4" id="lift-card-${e.id}">
+            <div class="card h-100 p-3 card-hover border-top border-3 ${e.status === 'fault' ? 'border-danger' : (e.status === 'maintenance' ? 'border-warning' : 'border-primary')}">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                  <h6 class="fw-bold text-navy mb-0">${e.code}</h6>
+                  <small class="text-secondary">${e.name}</small>
+                </div>
+                <span class="badge-status ${badgeClass}" id="status-badge-${e.id}">${e.status}</span>
+              </div>
+              <div class="d-flex align-items-center justify-content-between p-2 rounded-3 bg-light my-2">
+                <div>
+                  <small class="text-muted d-block" style="font-size: 0.72rem;">CURRENT FLOOR</small>
+                  <span class="fs-4 fw-bold text-navy" id="floor-val-${e.id}">Floor ${e.current_floor}</span>
+                </div>
+                <div class="text-end">
+                  <small class="text-muted d-block" style="font-size: 0.72rem;">DIRECTION</small>
+                  <span class="fw-semibold small text-capitalize" id="dir-val-${e.id}">
+                    <i class="bi ${dirIcon} me-1"></i> ${e.direction}
+                  </span>
+                </div>
+              </div>
+              <div class="d-flex justify-content-between align-items-center pt-2 border-top small text-secondary">
+                <span>Doors: <strong class="text-capitalize" id="door-val-${e.id}">${e.door_state}</strong></span>
+                <a href="simulator.html?id=${e.id}" class="btn btn-outline-primary btn-sm py-0 px-2 rounded-pill" style="font-size: 0.75rem;">
+                  Simulate <i class="bi bi-box-arrow-up-right ms-1"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function updateLiveElevatorCards(simulators) {
+      if (!simulators) return;
+      Object.entries(simulators).forEach(([id, sim]) => {
+        const floorEl = document.getElementById(`floor-val-${id}`);
+        const dirEl = document.getElementById(`dir-val-${id}`);
+        const doorEl = document.getElementById(`door-val-${id}`);
+        const badgeEl = document.getElementById(`status-badge-${id}`);
+
+        if (floorEl) floorEl.textContent = `Floor ${sim.current_floor}`;
+        if (doorEl) doorEl.textContent = sim.door_state;
+        if (dirEl) {
+          let dirIcon = 'bi-dash text-muted';
+          if (sim.direction === 'up') dirIcon = 'bi-arrow-up-circle-fill text-primary';
+          if (sim.direction === 'down') dirIcon = 'bi-arrow-down-circle-fill text-info';
+          dirEl.innerHTML = `<i class="bi ${dirIcon} me-1"></i> ${sim.direction}`;
+        }
+        if (badgeEl) {
+          badgeEl.textContent = sim.status;
+          badgeEl.className = `badge-status badge-${sim.status}`;
+        }
+      });
+    }
+
+    function renderMaintenanceSchedule(schedule) {
+      const tbody = document.getElementById('maintenance-schedule-table');
+      if (!tbody) return;
+      if (!schedule || schedule.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-3 text-muted">No pending maintenance scheduled.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = schedule.map(t => {
+        const ticketNum = t.ticket_number || (t.id ? `TKT-${t.id}` : 'TKT-000');
+        const elevCode = t.elevator_code || t.elevator_name || 'All Lifts';
+        const category = t.category || t.title || 'General Service';
+        const priority = t.priority || 'Medium';
+        const date = t.scheduled_date || 'Pending';
+        const tech = t.technician || t.technician_name || 'Unassigned';
+        return `
+          <tr>
+            <td><strong class="text-navy">${ticketNum}</strong></td>
+            <td><span class="badge bg-light text-dark border">${elevCode}</span></td>
+            <td>${category}</td>
+            <td><span class="badge-status badge-priority-${priority.toLowerCase()}">${priority}</span></td>
+            <td>${date}</td>
+            <td>${tech}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderActivityTable(activity) {
+      const tbody = document.getElementById('activity-log-table');
+      if (!tbody) return;
+      if (!activity || activity.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3 text-muted">No recent activity logged.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = activity.map(a => {
+        const time = a.timestamp || a.time || 'Just now';
+        const action = a.action || a.status || 'EVENT';
+        const resource = a.resource || 'System';
+        const user = a.user_email || 'dispatcher';
+        const details = a.details || a.description || '-';
+        return `
+          <tr>
+            <td class="text-nowrap text-secondary">${time}</td>
+            <td><span class="badge bg-navy-secondary text-danfez-cyan">${action}</span></td>
+            <td>${resource}</td>
+            <td><small class="text-secondary">${user}</small></td>
+            <td class="text-secondary">${details}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderDoughnutChart(operational, maintenance, fault) {
+      const ctx = document.getElementById('availabilityDoughnut');
+      if (!ctx) return;
+      const total = operational + maintenance + fault;
+      const dataValues = total > 0 ? [operational, maintenance, fault] : [1, 0, 0];
+      const bgColors = total > 0 ? ['#18A874', '#F5A623', '#E74C3C'] : ['#E2E8F0', '#E2E8F0', '#E2E8F0'];
+
+      if (doughnutChart) {
+        doughnutChart.data.datasets[0].data = dataValues;
+        doughnutChart.data.datasets[0].backgroundColor = bgColors;
+        doughnutChart.update();
+        return;
+      }
+
+      doughnutChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Operational', 'Maintenance', 'Fault'],
+          datasets: [{
+            data: dataValues,
+            backgroundColor: bgColors,
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+          },
+          cutout: '70%'
+        }
+      });
+    }
+  </script>
+</body>
+</html>

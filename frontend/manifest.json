@@ -1,0 +1,48 @@
+{
+  "name": "DANFEZ TECH HOUSE — Danfez Lift Control",
+  "short_name": "Danfez Lift",
+  "description": "Intelligent Elevator Monitoring & Maintenance Software for DANFEZ TECH HOUSE",
+  "start_url": "/dashboard.html",
+  "display": "standalone",
+  "background_color": "#07162B",
+  "theme_color": "#07162B",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["utilities", "business", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "url": "/dashboard.html",
+      "description": "Building lift overview"
+    },
+    {
+      "name": "Simulator",
+      "url": "/simulator.html",
+      "description": "Virtual 10-floor elevator simulator"
+    },
+    {
+      "name": "Alerts",
+      "url": "/alerts.html",
+      "description": "Active faults and critical safety alerts"
+    }
+  ]
+}

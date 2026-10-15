@@ -1,0 +1,23 @@
+{
+  "name": "smart-lift-management-system",
+  "version": "1.0.0",
+  "description": "A comprehensive, responsive Building Lift Management System built for **DANFEZ TECH HOUSE**. The system features a mobile-first Progressive Web App (PWA) architecture with an interactive 10-floor virtual elevator simulation, real-time telemetry, multi-user authentication, maintenance work order workflows, safety fault triage, certified technician management, analytics dashboards, and role-based access control.",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/core": "^8.5.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.3"
+  }
+}

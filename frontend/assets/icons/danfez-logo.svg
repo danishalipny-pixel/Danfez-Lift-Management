@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 60" width="240" height="60">
+  <defs>
+    <linearGradient id="danfez-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#168BFF" />
+      <stop offset="100%" stop-color="#28D7F2" />
+    </linearGradient>
+    <linearGradient id="danfez-dark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#07162B" />
+      <stop offset="100%" stop-color="#102541" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Elevator Shaft & Arrows Symbol -->
+  <g transform="translate(10, 8)">
+    <rect x="0" y="0" width="44" height="44" rx="8" fill="url(#danfez-dark)" stroke="url(#danfez-grad)" stroke-width="2"/>
+    <!-- Shaft vertical rails -->
+    <line x1="8" y1="6" x2="8" y2="38" stroke="#168BFF" stroke-width="1.5" stroke-dasharray="2 2" opacity="0.6"/>
+    <line x1="36" y1="6" x2="36" y2="38" stroke="#168BFF" stroke-width="1.5" stroke-dasharray="2 2" opacity="0.6"/>
+    <!-- Elevator Car -->
+    <rect x="13" y="12" width="18" height="20" rx="3" fill="#102541" stroke="#28D7F2" stroke-width="1.5"/>
+    <!-- Up & Down Arrows inside car -->
+    <path d="M22 15 L17 21 L27 21 Z" fill="#28D7F2" />
+    <path d="M22 29 L17 23 L27 23 Z" fill="#168BFF" />
+  </g>
+
+  <!-- Typography -->
+  <text x="64" y="27" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="19" font-weight="800" fill="#07162B" letter-spacing="1.5">DANFEZ</text>
+  <text x="148" y="27" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14" font-weight="600" fill="#168BFF" letter-spacing="1">TECH</text>
+  <text x="64" y="44" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10.5" font-weight="600" fill="#5A6E85" letter-spacing="0.5">LIFT CONTROL SYSTEM</text>
+</svg>
