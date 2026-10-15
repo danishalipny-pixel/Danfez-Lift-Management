@@ -46,7 +46,7 @@ const DanfezAuth = {
     } catch (e) {
       window.danfezApi.clearSession();
     }
-    window.location.href = '/dashboard.html';
+    window.location.href = 'dashboard.html';
   }
 };
 

@@ -60,6 +60,10 @@ class DanfezAudio {
     }
   }
 
+  playChime() {
+    this.playArrivalChime();
+  }
+
   // Button click beep
   playButtonBeep() {
     if (!this.soundEnabled) return;

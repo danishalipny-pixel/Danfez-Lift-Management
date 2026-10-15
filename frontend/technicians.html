@@ -4,18 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Technician Management — Danfez Lift Control</title>
-  <link rel="manifest" href="/manifest.json">
-  <link rel="icon" type="image/svg+xml" href="/assets/icons/danfez-logo.svg">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="assets/icons/danfez-logo.svg">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="/assets/css/danfez-theme.css">
+  <link rel="stylesheet" href="assets/css/danfez-theme.css">
 </head>
 <body>
   <div class="app-wrapper">
     <!-- Desktop Sidebar -->
     <aside class="danfez-sidebar">
       <div class="sidebar-brand">
-        <a href="/dashboard.html" class="d-flex align-items-center text-decoration-none">
+        <a href="dashboard.html" class="d-flex align-items-center text-decoration-none">
           <div class="d-inline-flex p-2 rounded-3 bg-navy-secondary border border-secondary border-opacity-25 me-2">
             <i class="bi bi-building-up fs-5 text-danfez-cyan"></i>
           </div>
@@ -28,19 +28,19 @@
 
       <nav class="sidebar-nav">
         <div class="nav-category">Main Operations</div>
-        <a href="/dashboard.html" class="nav-link"><i class="bi bi-speedometer2"></i> Dashboard</a>
-        <a href="/lifts.html" class="nav-link"><i class="bi bi-building"></i> Lift Monitoring</a>
-        <a href="/simulator.html" class="nav-link"><i class="bi bi-play-circle"></i> Floor Simulator</a>
+        <a href="dashboard.html" class="nav-link"><i class="bi bi-speedometer2"></i> Dashboard</a>
+        <a href="lifts.html" class="nav-link"><i class="bi bi-building"></i> Lift Monitoring</a>
+        <a href="simulator.html" class="nav-link"><i class="bi bi-play-circle"></i> Floor Simulator</a>
 
         <div class="nav-category">Fleet & Service</div>
-        <a href="/maintenance.html" class="nav-link"><i class="bi bi-tools"></i> Maintenance</a>
-        <a href="/alerts.html" class="nav-link"><i class="bi bi-shield-exclamation"></i> Fault & Alert Center</a>
-        <a href="/technicians.html" class="nav-link active"><i class="bi bi-person-badge"></i> Technicians</a>
-        <a href="/reports.html" class="nav-link"><i class="bi bi-graph-up-arrow"></i> Reports & Analytics</a>
+        <a href="maintenance.html" class="nav-link"><i class="bi bi-tools"></i> Maintenance</a>
+        <a href="alerts.html" class="nav-link"><i class="bi bi-shield-exclamation"></i> Fault & Alert Center</a>
+        <a href="technicians.html" class="nav-link active"><i class="bi bi-person-badge"></i> Technicians</a>
+        <a href="reports.html" class="nav-link"><i class="bi bi-graph-up-arrow"></i> Reports & Analytics</a>
 
         <div class="nav-category admin-only">Administration</div>
-        <a href="/users.html" class="nav-link admin-only"><i class="bi bi-people"></i> User Management</a>
-        <a href="/settings.html" class="nav-link admin-only"><i class="bi bi-gear"></i> Settings & Audit</a>
+        <a href="users.html" class="nav-link admin-only"><i class="bi bi-people"></i> User Management</a>
+        <a href="settings.html" class="nav-link admin-only"><i class="bi bi-gear"></i> Settings & Audit</a>
       </nav>
 
       <div class="sidebar-footer">
@@ -81,7 +81,7 @@
           <button class="btn btn-primary btn-sm rounded-pill admin-only" data-bs-toggle="modal" data-bs-target="#addTechModal">
             <i class="bi bi-plus-lg me-1"></i> Add Technician
           </button>
-          <a href="/profile.html" class="btn btn-light rounded-circle" style="width: 38px; height: 38px;">
+          <a href="profile.html" class="btn btn-light rounded-circle" style="width: 38px; height: 38px;">
             <i class="bi bi-person"></i>
           </a>
         </div>
@@ -230,18 +230,18 @@
 
   <!-- Mobile Bottom Navigation -->
   <nav class="mobile-bottom-nav">
-    <a href="/dashboard.html" class="mobile-nav-item" data-page="dashboard"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a>
-    <a href="/lifts.html" class="mobile-nav-item" data-page="lifts"><i class="bi bi-building"></i><span>Lifts</span></a>
-    <a href="/simulator.html" class="mobile-nav-item" data-page="simulator"><i class="bi bi-play-circle"></i><span>Simulator</span></a>
-    <a href="/alerts.html" class="mobile-nav-item" data-page="alerts"><i class="bi bi-shield-exclamation"></i><span>Alerts</span></a>
+    <a href="dashboard.html" class="mobile-nav-item" data-page="dashboard"><i class="bi bi-speedometer2"></i><span>Dashboard</span></a>
+    <a href="lifts.html" class="mobile-nav-item" data-page="lifts"><i class="bi bi-building"></i><span>Lifts</span></a>
+    <a href="simulator.html" class="mobile-nav-item" data-page="simulator"><i class="bi bi-play-circle"></i><span>Simulator</span></a>
+    <a href="alerts.html" class="mobile-nav-item" data-page="alerts"><i class="bi bi-shield-exclamation"></i><span>Alerts</span></a>
     <a href="#" class="mobile-nav-item" onclick="document.querySelector('.danfez-sidebar').classList.toggle('show'); return false;"><i class="bi bi-grid"></i><span>More</span></a>
   </nav>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="/assets/js/api.js"></script>
-  <script src="/assets/js/auth.js"></script>
-  <script src="/assets/js/app.js"></script>
-  <script src="/assets/js/pwa.js"></script>
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script src="assets/js/pwa.js"></script>
 
   <script>
     let techniciansCache = [];

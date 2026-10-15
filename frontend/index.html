@@ -4,13 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Danfez Lift Control — Intelligent Elevator Monitoring & Maintenance</title>
-  <link rel="icon" type="image/svg+xml" href="/assets/icons/danfez-logo.svg">
-  <script src="/assets/js/api.js"></script>
-  <script src="/assets/js/auth.js"></script>
+  <link rel="icon" type="image/svg+xml" href="assets/icons/danfez-logo.svg">
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/auth.js"></script>
 </head>
 <body style="background-color: #07162B; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: sans-serif; color: #fff;">
   <div style="text-align: center;">
-    <img src="/assets/icons/danfez-logo.svg" alt="DANFEZ TECH HOUSE" style="height: 50px; margin-bottom: 20px; filter: brightness(0) invert(1);">
+    <img src="assets/icons/danfez-logo.svg" alt="DANFEZ TECH HOUSE" style="height: 50px; margin-bottom: 20px; filter: brightness(0) invert(1);">
     <div style="font-size: 1.15rem; color: #28D7F2; margin-bottom: 10px; font-weight: 600;">DANFEZ TECH HOUSE</div>
     <div style="font-size: 0.95rem; color: #94A3B8; margin-bottom: 15px;">Entering Danfez Lift Control Center...</div>
     <div style="display: inline-block; width: 28px; height: 28px; border: 3px solid rgba(40,215,242,0.2); border-top-color: #28D7F2; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
@@ -29,10 +29,10 @@
           // Auto-authenticate as Chief Admin for direct dashboard access
           await window.danfezApi.login('admin@danfez.com', 'DanfezAdmin2026!', true);
         }
-        window.location.replace('/dashboard.html');
+        window.location.replace('dashboard.html');
       } catch (err) {
         console.warn('Auto-login notice:', err);
-        window.location.replace('/dashboard.html');
+        window.location.replace('dashboard.html');
       }
     });
   </script>

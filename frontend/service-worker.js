@@ -1,32 +1,32 @@
-const CACHE_NAME = 'danfez-lift-v2.0.3';
+const CACHE_NAME = 'danfez-lift-v2.0.4';
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/login.html',
-  '/register.html',
-  '/forgot-password.html',
-  '/reset-password.html',
-  '/verify-email.html',
-  '/dashboard.html',
-  '/lifts.html',
-  '/simulator.html',
-  '/maintenance.html',
-  '/alerts.html',
-  '/technicians.html',
-  '/reports.html',
-  '/users.html',
-  '/settings.html',
-  '/profile.html',
-  '/offline.html',
-  '/manifest.json',
-  '/assets/css/danfez-theme.css',
-  '/assets/js/api.js',
-  '/assets/js/auth.js',
-  '/assets/js/app.js',
-  '/assets/js/pwa.js',
-  '/assets/icons/danfez-logo.svg',
-  '/assets/icons/icon-192.png',
-  '/assets/icons/icon-512.png'
+  './',
+  'index.html',
+  'login.html',
+  'register.html',
+  'forgot-password.html',
+  'reset-password.html',
+  'verify-email.html',
+  'dashboard.html',
+  'lifts.html',
+  'simulator.html',
+  'maintenance.html',
+  'alerts.html',
+  'technicians.html',
+  'reports.html',
+  'users.html',
+  'settings.html',
+  'profile.html',
+  'offline.html',
+  'manifest.json',
+  'assets/css/danfez-theme.css',
+  'assets/js/api.js',
+  'assets/js/auth.js',
+  'assets/js/app.js',
+  'assets/js/pwa.js',
+  'assets/icons/danfez-logo.svg',
+  'assets/icons/icon-192.png',
+  'assets/icons/icon-512.png'
 ];
 
 self.addEventListener('install', (event) => {
@@ -69,7 +69,7 @@ self.addEventListener('fetch', (event) => {
       fetch(event.request)
         .catch(() => {
           return caches.match(event.request).then((cachedResponse) => {
-            return cachedResponse || caches.match('/offline.html');
+            return cachedResponse || caches.match('offline.html');
           });
         })
     );
@@ -81,7 +81,7 @@ self.addEventListener('fetch', (event) => {
         });
       }).catch(() => {
         if (event.request.destination === 'document') {
-          return caches.match('/offline.html');
+          return caches.match('offline.html');
         }
       })
     );

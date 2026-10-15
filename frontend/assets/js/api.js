@@ -218,6 +218,17 @@ class DanfezApiClient {
     }
   }
 
+  isGitHubOrStaticHosting() {
+    const host = (window.location.hostname || '').toLowerCase();
+    const proto = (window.location.protocol || '').toLowerCase();
+    return host.includes('github.io') ||
+           host.includes('github.com') ||
+           host.includes('githack') ||
+           host.includes('htmlpreview') ||
+           host.includes('gitpod') ||
+           proto === 'file:';
+  }
+
   getBaseUrl() {
     const configured = localStorage.getItem(this.backendUrlKey);
     if (configured && configured.trim()) {
@@ -265,7 +276,7 @@ class DanfezApiClient {
     } else {
       pill.innerHTML = `
         <span class="badge bg-primary bg-opacity-90 text-white shadow-sm px-2 py-1 rounded-pill cursor-pointer" onclick="window.danfezApi.promptConfigureBackend()" style="cursor: pointer;" title="Tap to configure backend server IP">
-          <i class="bi bi-cpu me-1"></i> Simulator (Tap for Server IP)
+          <i class="bi bi-cpu me-1"></i> Autonomous Mode (Tap for Server IP)
         </span>
       `;
     }
@@ -300,6 +311,15 @@ class DanfezApiClient {
   }
 
   async request(endpoint, options = {}) {
+    // If running in static GitHub environment without custom remote backend configured:
+    // Instantly return the local simulation engine response with zero network latency
+    const configured = localStorage.getItem(this.backendUrlKey);
+    if (!configured && this.isGitHubOrStaticHosting()) {
+      this.isOfflineMode = true;
+      this.updateConnectionStatusPill(false, 'GitHub Standalone');
+      return this.handleFallbackEndpoint(endpoint, options);
+    }
+
     const baseUrl = this.getBaseUrl();
     const url = `${baseUrl}${endpoint}`;
     const headers = {
@@ -340,7 +360,7 @@ class DanfezApiClient {
 
       const data = await response.json().catch(() => null);
 
-      if (!response.ok || data === null) {
+      if (!response.ok || data === null || (data && data.offline)) {
         return this.handleFallbackEndpoint(endpoint, options);
       }
 
@@ -981,6 +1001,13 @@ class DanfezApiClient {
   // --- WebSocket Connection Helper with Autonomous Standalone Fallback ---
   connectSimulatorWebSocket(onMessage, onError) {
     if (onMessage) this.wsCallbacks.push(onMessage);
+
+    const configured = localStorage.getItem(this.backendUrlKey);
+    if (!configured && this.isGitHubOrStaticHosting()) {
+      // In static GitHub mode, run internal autonomous simulation loop directly without attempting WebSocket
+      this.startInternalSimulationLoop();
+      return null;
+    }
 
     const baseUrl = this.getBaseUrl();
     let wsUrl;
