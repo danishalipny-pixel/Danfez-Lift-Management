@@ -587,19 +587,29 @@
 
     async function handleDoorAction(action) {
       window.danfezAudio.playButtonBeep();
-      const container = document.getElementById('door-container');
       const actionLower = (action || '').toLowerCase();
+      const isOpen = (actionLower === 'open' || actionLower === 'opening');
+      
+      const container = document.getElementById('door-container');
       if (container) {
-        if (actionLower === 'open') {
-          container.className = 'door-container doors-open';
-        } else {
-          container.className = 'door-container';
-        }
+        container.className = isOpen ? 'door-container doors-open' : 'door-container';
       }
+
+      const doorText = document.getElementById('sim-door-text');
+      if (doorText) doorText.textContent = isOpen ? 'open' : 'closed';
+      
+      const digiText = document.getElementById('digital-status-text');
+      if (digiText) {
+        const curStatus = (elevatorState && elevatorState.status) ? elevatorState.status.toUpperCase() : 'OPERATIONAL';
+        digiText.textContent = `${curStatus} • DOORS ${isOpen ? 'OPEN' : 'CLOSED'}`;
+      }
+
       try {
-        await window.danfezApi.doorAction(activeElevatorId, actionLower);
+        if (window.danfezApi && typeof window.danfezApi.doorAction === 'function') {
+          await window.danfezApi.doorAction(activeElevatorId, actionLower);
+        }
       } catch (err) {
-        console.warn('Door action local sync:', err);
+        console.warn('Door action local sync note:', err);
       }
     }
 

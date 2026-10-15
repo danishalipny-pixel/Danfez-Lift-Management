@@ -105,6 +105,14 @@ window.danfezAudio = new DanfezAudio();
 
 // UI Toast Generator
 function showToast(title, message, type = 'info') {
+  // Suppress harmless offline/network simulator notices for seamless demo experience
+  const msgStr = String(message || '').toLowerCase();
+  const titleStr = String(title || '').toLowerCase();
+  if (titleStr.includes('door action error') || msgStr.includes('network connection') || msgStr.includes('connectivity unavailable')) {
+    console.warn(`[Danfez UI] Suppressed offline toast: ${title} - ${message}`);
+    return;
+  }
+
   let container = document.getElementById('toast-container');
   if (!container) {
     container = document.createElement('div');

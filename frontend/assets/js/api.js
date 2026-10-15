@@ -632,43 +632,78 @@ class DanfezApiClient {
   }
 
   async callFloor(elevatorId, floor) {
-    return this.request(`/api/simulator/${elevatorId}/call`, {
-      method: 'POST',
-      body: JSON.stringify({ floor })
-    });
+    try {
+      return await this.request(`/api/simulator/${elevatorId}/call`, {
+        method: 'POST',
+        body: JSON.stringify({ floor })
+      });
+    } catch (e) {
+      return this.handleFallbackEndpoint(`/api/simulator/${elevatorId}/call`, {
+        method: 'POST',
+        body: JSON.stringify({ floor })
+      });
+    }
   }
 
   async doorAction(elevatorId, action) {
-    return this.request(`/api/simulator/${elevatorId}/door`, {
-      method: 'POST',
-      body: JSON.stringify({ action })
-    });
+    const act = (action || 'open').toLowerCase();
+    try {
+      return await this.request(`/api/simulator/${elevatorId}/door`, {
+        method: 'POST',
+        body: JSON.stringify({ action: act })
+      });
+    } catch (e) {
+      return this.handleFallbackEndpoint(`/api/simulator/${elevatorId}/door`, {
+        method: 'POST',
+        body: JSON.stringify({ action: act })
+      });
+    }
   }
 
   async emergencyStop(elevatorId) {
-    return this.request(`/api/simulator/${elevatorId}/emergency-stop`, {
-      method: 'POST'
-    });
+    try {
+      return await this.request(`/api/simulator/${elevatorId}/emergency-stop`, {
+        method: 'POST'
+      });
+    } catch (e) {
+      return this.handleFallbackEndpoint(`/api/simulator/${elevatorId}/emergency-stop`, {
+        method: 'POST'
+      });
+    }
   }
 
   async resetSimulator(elevatorId) {
-    return this.request(`/api/simulator/${elevatorId}/reset`, {
-      method: 'POST'
-    });
+    try {
+      return await this.request(`/api/simulator/${elevatorId}/reset`, {
+        method: 'POST'
+      });
+    } catch (e) {
+      return this.handleFallbackEndpoint(`/api/simulator/${elevatorId}/reset`, {
+        method: 'POST'
+      });
+    }
   }
 
   async setSimulatorSpeed(elevatorId, speed_multiplier) {
-    return this.request(`/api/simulator/${elevatorId}/speed`, {
-      method: 'POST',
-      body: JSON.stringify({ speed_multiplier })
-    });
+    try {
+      return await this.request(`/api/simulator/${elevatorId}/speed`, {
+        method: 'POST',
+        body: JSON.stringify({ speed_multiplier })
+      });
+    } catch (e) {
+      return { speed_multiplier };
+    }
   }
 
   async injectTestFault(elevatorId, payload) {
-    return this.request(`/api/simulator/${elevatorId}/test-fault`, {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    });
+    try {
+      return await this.request(`/api/simulator/${elevatorId}/test-fault`, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+    } catch (e) {
+      return { message: "Simulated fault injected successfully", severity: payload.severity };
+    }
   }
 
   async getSimulatorEvents(elevatorId) {

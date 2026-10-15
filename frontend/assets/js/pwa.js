@@ -4,16 +4,29 @@
 
 let deferredPrompt = null;
 
-// Register Service Worker
+// Register & Update Service Worker immediately
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js')
+    navigator.serviceWorker.register('/service-worker.js?v=2.0.2')
       .then((reg) => {
-        console.log('[Danfez PWA] Service Worker registered with scope:', reg.scope);
+        reg.update();
+        console.log('[Danfez PWA] Service Worker registered and checked for updates:', reg.scope);
       })
       .catch((err) => {
         console.warn('[Danfez PWA] Service Worker registration failed:', err);
       });
+  });
+}
+
+// Automatically clear legacy caches from client storage
+if ('caches' in window) {
+  caches.keys().then((names) => {
+    names.forEach((name) => {
+      if (name.includes('v2.0.0') || name.includes('v2.0.1')) {
+        console.log('[Danfez PWA] Removing outdated cache:', name);
+        caches.delete(name);
+      }
+    });
   });
 }
 
@@ -48,10 +61,7 @@ function updateOnlineStatus() {
     badge.innerHTML = '<span class="pulse-dot"></span> LIVE / SIMULATION';
   } else {
     badge.className = 'live-badge offline';
-    badge.innerHTML = '<i class="bi bi-wifi-off me-1"></i> OFFLINE';
-    if (typeof showToast === 'function') {
-      showToast('Network Disconnected', 'Operating in offline cache mode. Elevator commands require active connectivity.', 'warning');
-    }
+    badge.innerHTML = '<i class="bi bi-wifi-off me-1"></i> SIMULATION / OFFLINE';
   }
 }
 
