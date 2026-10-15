@@ -1070,27 +1070,31 @@ class DanfezApiClient {
       if (el.target_floor !== null && el.target_floor !== undefined) {
         if (el.current_floor < el.target_floor) {
           el.current_floor += 1;
-          el.status = 'MOVING_UP';
-          el.door_state = 'CLOSED';
+          el.status = 'moving';
+          el.direction = 'up';
+          el.door_state = 'closed';
         } else if (el.current_floor > el.target_floor) {
           el.current_floor -= 1;
-          el.status = 'MOVING_DOWN';
-          el.door_state = 'CLOSED';
+          el.status = 'moving';
+          el.direction = 'down';
+          el.door_state = 'closed';
         } else {
           // Arrived at target floor
           el.target_floor = null;
-          el.status = 'IDLE';
-          el.door_state = 'OPEN';
+          el.status = 'operational';
+          el.direction = 'idle';
+          el.door_state = 'open';
           if (window.danfezAudio && typeof window.danfezAudio.playChime === 'function') {
             window.danfezAudio.playChime();
           }
           this.localStore.events.unshift({
             timestamp: new Date().toLocaleTimeString(),
-            text: `Elevator arrived at Floor ${el.current_floor}. Doors opened.`
+            type: 'ARRIVAL',
+            message: `Elevator arrived at Floor ${el.current_floor}. Doors opened.`
           });
           // Close door after 2.5s
           setTimeout(() => {
-            el.door_state = 'CLOSED';
+            el.door_state = 'closed';
             this.broadcastLocalState();
           }, 2500);
         }
